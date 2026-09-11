@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOVINEWS — Modelo de Boletim: Operação Policial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Oswald:ital,wght@0,600;0,700;1,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --preto:#000000;
+    --azul:#0e1e3f;
+    --vinho:#66252d;
+    --cinza:#eaeaea;
+    --branco:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Inter',Arial,sans-serif;
+    background:linear-gradient(165deg,#eef1f6 0%, #dfe3ec 55%, #e6e2e4 100%);
+    color:var(--preto);
+    padding:32px 16px;
+  }
+  .boletim{
+    max-width:760px;
+    margin:0 auto;
+    background:linear-gradient(180deg,#ffffff 0%, #fbfbfd 100%);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 18px 40px rgba(14,30,63,0.16), 0 2px 8px rgba(14,30,63,0.08);
+  }
+  .boletim-faixa-topo{
+    height:5px;
+    background:linear-gradient(90deg, var(--vinho) 0%, var(--azul) 100%);
+  }
+
+  /* ===== CABEÇALHO — CAPA COM FOTO ===== */
+  /* Troque a URL da foto na tag <div class="cabecalho-capa" style="--foto-capa:url('SUA_FOTO_AQUI');"> no HTML abaixo.
+     Sem uma URL válida ali, o fundo cai no padrão listrado (para deixar visível que falta a foto, em vez de sumir). */
+  .cabecalho-capa{
+    position:relative;
+    min-height:300px;
+    background-color:var(--preto);
+    background-image:
+      linear-gradient(90deg,
+        rgba(0,0,0,0.96) 0%,
+        rgba(0,0,0,0.90) 38%,
+        rgba(0,0,0,0.45) 68%,
+        rgba(0,0,0,0.10) 100%),
+      var(--foto-capa, repeating-linear-gradient(135deg, #1a1a1a 0 18px, #101010 18px 36px));
+    background-size:cover, cover;
+    background-position:center, center;
+    overflow:hidden;
+    color:var(--branco);
+  }
+  .capa-chevrons{
+    position:absolute;
+    left:0;top:0;bottom:0;
+    width:26px;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-evenly;
+  }
+  .capa-chevrons span{
+    display:block;
+    height:52px;
+    background:var(--vinho);
+    clip-path:polygon(0 0, 100% 22%, 100% 78%, 0 100%, 28% 50%);
+  }
+  .capa-chevrons span:nth-child(even){opacity:0.55;}
+  .capa-conteudo{
+    position:relative;
+    z-index:3;
+    padding:30px 36px 28px 40px;
+  }
+  .capa-logo{
+    font-family:'Poppins',sans-serif;
+    font-weight:800;
+    font-size:19px;
+    letter-spacing:0.5px;
+    margin-bottom:16px;
+  }
+  .capa-logo .movi{color:#e2725b;}
+  .capa-logo .safe{color:#6f8fc9;}
+  .capa-eyebrow{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-bottom:2px;
+  }
+  .capa-titulo{
+    font-family:'Oswald',sans-serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:56px;
+    line-height:0.92;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .capa-linha-accent{
+    width:150px;
+    height:5px;
+    margin-bottom:14px;
+    background:repeating-linear-gradient(115deg, var(--vinho) 0 8px, transparent 8px 14px);
+  }
+  .capa-sub{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:38px;
+    text-transform:uppercase;
+    line-height:1;
+    margin-bottom:14px;
+  }
+  .capa-linha-accent-fina{
+    width:90px;
+    height:3px;
+    margin-bottom:10px;
+    background:repeating-linear-gradient(115deg, var(--vinho) 0 6px, transparent 6px 11px);
+  }
+  .capa-local{
+    font-family:'Oswald',sans-serif;
+    font-weight:600;
+    font-size:19px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+
+  /* ===== BARRA DE INFORMAÇÕES (dados que mudam a cada envio) ===== */
+  .info-secundaria{
+    background:var(--preto);
+    color:var(--branco);
+    padding:16px 32px 20px;
+  }
+  .confidencial{
+    font-size:11px;
+    opacity:0.75;
+    line-height:1.5;
+    margin-bottom:12px;
+  }
+  .meta-linha{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 16px;
+    font-size:12.5px;
+    opacity:0.95;
+    margin-bottom:12px;
+  }
+  .meta-linha b{font-weight:600;}
+  .titulo-boletim{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    font-size:20px;
+    line-height:1.3;
+    opacity:0.95;
+  }
+
+  /* ===== FAIXA DE NÍVEL DE ALERTA ===== */
+  .faixa-alerta{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:linear-gradient(90deg,#fff3f0 0%, #fbe6e1 100%);
+    border-bottom:1px solid #f0d8d3;
+    padding:10px 32px;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--vinho);
+  }
+  .faixa-alerta .ponto{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--vinho);
+    flex-shrink:0;
+  }
+
+  /* ===== CORPO ===== */
+  .corpo{
+    padding:28px 32px 8px;
+    background:linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  }
+  .resumo{
+    font-size:15px;
+    line-height:1.65;
+    color:#1a1a1a;
+    background:linear-gradient(135deg,#eef1f7 0%, #e4e9f3 100%);
+    border-left:4px solid var(--azul);
+    padding:14px 16px;
+    border-radius:6px;
+    margin-bottom:26px;
+    box-shadow:0 2px 8px rgba(14,30,63,0.05);
+  }
+  .resumo b{color:var(--azul);}
+
+  .secao{margin-bottom:26px;}
+  .secao-titulo{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:0.4px;
+    text-transform:uppercase;
+    color:var(--azul);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+    padding-bottom:8px;
+    position:relative;
+  }
+  .secao-titulo::after{
+    content:"";
+    position:absolute;
+    left:0;right:0;bottom:0;
+    height:2px;
+    background:linear-gradient(90deg, var(--azul) 0%, var(--vinho) 100%);
+    opacity:0.35;
+  }
+  .secao-titulo .icone{
+    width:22px;height:22px;
+    border-radius:6px;
+    background:linear-gradient(135deg, var(--azul) 0%, var(--vinho) 100%);
+    color:var(--branco);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;
+    flex-shrink:0;
+  }
+  .secao p{
+    font-size:14px;
+    line-height:1.7;
+    color:#252525;
+    margin-bottom:10px;
+  }
+  .secao ul{
+    list-style:none;
+    padding:0;
+  }
+  .secao li{
+    font-size:13.5px;
+    line-height:1.6;
+    padding:8px 0 8px 20px;
+    position:relative;
+    border-bottom:1px dashed #e2e2e2;
+    color:#2a2a2a;
+  }
+  .secao li:last-child{border-bottom:none;}
+  .secao li::before{
+    content:"";
+    position:absolute;
+    left:0;top:15px;
+    width:7px;height:7px;
+    border-radius:50%;
+    background:var(--vinho);
+  }
+  .secao li b{color:var(--preto);}
+
+  .mapa-upload-wrap{
+    position:relative;
+    margin:12px 0 16px;
+  }
+  .imagem-mapa{
+    width:100%;
+    border-radius:10px;
+    border:1px solid #e2e2e2;
+    display:none;
+    box-shadow:0 4px 14px rgba(14,30,63,0.08);
+  }
+  .mapa-placeholder{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    min-height:170px;
+    border:2px dashed #c3c9d6;
+    border-radius:10px;
+    background:linear-gradient(135deg, #f3f5f9 0%, #e6eaf2 100%);
+    color:#6b7387;
+    font-size:13px;
+    font-weight:600;
+    text-align:center;
+    cursor:pointer;
+    padding:20px;
+    transition:background .15s, border-color .15s;
+  }
+  .mapa-placeholder:hover{
+    background:linear-gradient(135deg, #eaeef5 0%, #dde3ee 100%);
+    border-color:#a9b1c4;
+  }
+  .mapa-placeholder-icone{font-size:30px;}
+  .legenda-fonte{
+    font-size:11px;
+    color:#777;
+    font-style:italic;
+    margin-top:-8px;
+    margin-bottom:16px;
+  }
+
+  .grade-info{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .card-info{
+    background:linear-gradient(135deg, #f2f4f8 0%, #e6eaf1 100%);
+    border-radius:8px;
+    padding:12px 14px;
+    box-shadow:0 2px 6px rgba(14,30,63,0.05);
+  }
+  .card-info span{
+    display:block;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:#666;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .card-info strong{
+    font-size:14px;
+    color:var(--preto);
+  }
+
+  .orientacoes{
+    background:linear-gradient(135deg, #eef2fb 0%, #e1e8f6 100%);
+    border-left:4px solid var(--azul);
+    border-radius:8px;
+    padding:14px 16px;
+    box-shadow:0 2px 8px rgba(14,30,63,0.05);
+  }
+  .orientacoes li::before{background:var(--azul);}
+
+  .fonte-oficial{
+    font-size:12px;
+    color:#555;
+    margin-top:4px;
+  }
+  .fonte-oficial a{color:var(--azul);text-decoration:none;font-weight:600;}
+
+  .aviso-monitoramento{
+    margin-top:22px;
+    margin-bottom:24px;
+    padding:14px 16px;
+    border-radius:8px;
+    background:linear-gradient(135deg, #f4f0ee 0%, #efe3e1 100%);
+    border-left:4px solid var(--vinho);
+    font-size:13px;
+    line-height:1.6;
+    color:#3a2c2c;
+    box-shadow:0 2px 8px rgba(102,37,45,0.06);
+  }
+  .aviso-monitoramento b{color:var(--vinho);}
+
+  /* ===== RODAPÉ ===== */
+  .rodape{
+    position:relative;
+    background:var(--preto);
+    min-height:150px;
+    overflow:hidden;
+  }
+  .rodape-imagem{
+    display:block;
+    width:100%;
+    height:150px;
+    object-fit:cover;
+  }
+  .botao-foto-rodape{
+    top:16px;right:18px;
+    background:rgba(255,255,255,0.1);
+    border-color:rgba(255,255,255,0.35);
+  }
+  .botao-foto-rodape:hover{background:rgba(255,255,255,0.22);}
+
+  .editavel{
+    outline:1px dashed transparent;
+    border-radius:4px;
+    padding:2px 5px;
+    margin:-2px -5px;
+    cursor:text;
+    transition:background .15s, outline-color .15s;
+  }
+  .editavel:hover{
+    outline-color:rgba(255,255,255,0.35);
+    background:rgba(255,255,255,0.06);
+  }
+  .editavel:focus{
+    outline:1px dashed rgba(255,255,255,0.7);
+    background:rgba(255,255,255,0.1);
+  }
+  .editavel-clara:hover{
+    outline-color:rgba(14,30,63,0.35);
+    background:rgba(14,30,63,0.05);
+  }
+  .editavel-clara:focus{
+    outline:1px dashed rgba(14,30,63,0.6);
+    background:rgba(14,30,63,0.07);
+  }
+  .botao-foto{
+    position:absolute;
+    top:16px;right:18px;
+    z-index:4;
+    background:rgba(0,0,0,0.55);
+    border:1px solid rgba(255,255,255,0.4);
+    color:var(--branco);
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    font-weight:600;
+    padding:7px 12px;
+    border-radius:20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .botao-foto:hover{background:rgba(0,0,0,0.75);}
+  .botao-foto-mapa{
+    display:none;
+    top:12px;right:12px;
+  }
+  @media print{
+    .botao-foto{display:none;}
+    .editavel{outline:none !important;background:none !important;}
+  }
+  @media (max-width:520px){
+    .grade-info{grid-template-columns:1fr;}
+    .capa-conteudo, .info-secundaria, .corpo{padding-left:20px;padding-right:20px;}
+    .faixa-alerta{padding-left:20px;padding-right:20px;}
+    .capa-titulo{font-size:40px;}
+    .capa-sub{font-size:28px;}
+    .titulo-boletim{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="boletim">
+
+  <div class="boletim-faixa-topo"></div>
+
+  <!-- ===== CABEÇALHO — CAPA (padrão fixo; troque apenas a foto de fundo a cada envio) ===== -->
+  <div class="cabecalho-capa" style="--foto-capa:url('{{URL_FOTO_CAPA_OPERACAO}}');">
+    <button type="button" class="botao-foto" onclick="document.getElementById('inputFotoCapa').click()">🖼️ Trocar foto</button>
+    <input type="file" id="inputFotoCapa" accept="image/*" style="display:none">
+    <div class="capa-chevrons">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="capa-conteudo">
+      <div class="capa-logo"><span class="movi">MOVI</span><span class="safe">SAFE</span></div>
+      <div class="capa-eyebrow">Boletim de</div>
+      <div class="capa-titulo">Operações</div>
+      <div class="capa-linha-accent"></div>
+      <div class="capa-sub">Policiais</div>
+      <div class="capa-linha-accent-fina"></div>
+      <div class="capa-local editavel" contenteditable="true">{{CIDADE}}</div>
+    </div>
+  </div>
+
+  <!-- ===== BARRA DE INFORMAÇÕES (isto muda a cada envio) ===== -->
+  <div class="info-secundaria">
+    <div class="confidencial">
+      Este boletim é direcionado exclusivamente aos clientes Movisafe. Material informativo confidencial — uso interno e restrito.
+    </div>
+
+    <div class="meta-linha">
+      <span><b>Local:</b> <span class="editavel" contenteditable="true">{{BAIRRO}}, {{CIDADE}} – {{UF}}</span></span>
+      <span><b>Data/Hora:</b> <span class="editavel" contenteditable="true">{{DATA}} · {{HORA}}</span></span>
+      <span><b>Órgão responsável:</b> <span class="editavel" contenteditable="true">{{ORGAO_RESPONSAVEL}}</span></span>
+    </div>
+
+    <div class="titulo-boletim editavel" contenteditable="true">
+      {{TÍTULO DA OPERAÇÃO — ex.: Operação Policial de Grande Porte em {{BAIRRO}} Mobiliza Reforço de Segurança}}
+    </div>
+  </div>
+
+  <!-- ===== FAIXA DE NÍVEL DE ALERTA (ajustar cor/texto conforme gravidade) ===== -->
+  <div class="faixa-alerta">
+    <span class="ponto"></span>
+    <span class="editavel editavel-clara" contenteditable="true">NÍVEL DE ATENÇÃO: {{BAIXO / MODERADO / ALTO}} — recomenda-se atenção redobrada na região indicada</span>
+  </div>
+
+  <!-- ===== CORPO ===== -->
+  <div class="corpo">
+
+    <div class="resumo editavel editavel-clara" contenteditable="true">
+      Este Boletim tem o propósito de informar que <b>{{ÓRGÃO — ex.: a Polícia Civil / PM-RJ / Delegacia de Homicídios}}</b>
+      deflagrou, nesta <b>{{DIA DA SEMANA, DD/MM}}</b>, uma operação policial em <b>{{BAIRRO / REGIÃO}}</b>,
+      com o objetivo de {{OBJETIVO DA OPERAÇÃO — ex.: cumprir mandados de busca e apreensão e prisão}}.
+      A ação conta com efetivo de <b>{{Nº AGENTES/VIATURAS, se divulgado}}</b> e segue em andamento.
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">①</span>Resumo da Operação</div>
+      <p class="editavel editavel-clara" contenteditable="true">
+        {{Parágrafo descritivo: motivação da operação, unidades envolvidas, contexto (ex.: combate ao tráfico,
+        cumprimento de mandados, resposta a ocorrência), horário de início e status atual.}}
+      </p>
+      <div class="mapa-upload-wrap">
+        <img id="imagemMapaImg" class="imagem-mapa" src="{{URL_IMAGEM_MAPA_OU_FOTO}}" alt="Mapa ou foto do local" onerror="this.style.display='none';">
+        <div id="mapaPlaceholder" class="mapa-placeholder" onclick="document.getElementById('inputImagemMapa').click()">
+          <span class="mapa-placeholder-icone">🗺️</span>
+          <span>Clique para adicionar foto ou mapa do local</span>
+        </div>
+        <button type="button" id="botaoTrocarMapa" class="botao-foto botao-foto-mapa" onclick="document.getElementById('inputImagemMapa').click()">🖼️ Trocar imagem</button>
+        <input type="file" id="inputImagemMapa" accept="image/*" style="display:none">
+      </div>
+      <div class="legenda-fonte editavel editavel-clara" contenteditable="true">Fonte: {{NOME DA FONTE OFICIAL}}</div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">②</span>Perímetro / Área de Atuação</div>
+      <ul class="editavel editavel-clara" contenteditable="true">
+        <li><b>{{Via/Bairro 1}}:</b> {{descrição do trecho ou ponto de concentração}}</li>
+        <li><b>{{Via/Bairro 2}}:</b> {{descrição do trecho ou ponto de concentração}}</li>
+        <li><b>{{Via/Bairro 3}}:</b> {{descrição do trecho ou ponto de concentração}}</li>
+      </ul>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">③</span>Impactos na Região</div>
+      <div class="grade-info">
+        <div class="card-info">
+          <span>Vias afetadas</span>
+          <strong class="editavel editavel-clara" contenteditable="true">{{Sim / Não — detalhar}}</strong>
+        </div>
+        <div class="card-info">
+          <span>Transporte público</span>
+          <strong class="editavel editavel-clara" contenteditable="true">{{Normal / Alterado}}</strong>
+        </div>
+        <div class="card-info">
+          <span>Comércio local</span>
+          <strong class="editavel editavel-clara" contenteditable="true">{{Funcionamento normal / Fechado por recomendação}}</strong>
+        </div>
+        <div class="card-info">
+          <span>Previsão de encerramento</span>
+          <strong class="editavel editavel-clara" contenteditable="true">{{Horário estimado ou "Sem previsão"}}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">④</span>Orientações de Segurança</div>
+      <div class="orientacoes">
+        <ul class="editavel editavel-clara" contenteditable="true">
+          <li>Evite circular ou permanecer nas proximidades de <b>{{local}}</b> durante o período da operação;</li>
+          <li>Mantenha portas, janelas e portões fechados caso esteja em imóvel na área indicada;</li>
+          <li>Não compartilhe imagens ou a localização de agentes em tempo real;</li>
+          <li>Siga rigorosamente as orientações de agentes de segurança pública presentes no local;</li>
+          <li>Em caso de dúvida ou necessidade, acione a Central Movisafe pelos canais de emergência habituais.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">⑤</span>Fonte</div>
+      <p class="fonte-oficial editavel editavel-clara" contenteditable="true">
+        Fonte: <a href="{{URL_FONTE_OFICIAL}}" target="_blank" rel="noopener">{{NOME DA FONTE OFICIAL — ex.: PMERJ, PCERJ, COR-Rio}}</a>
+        · Atualizado em {{DATA/HORA DA ÚLTIMA ATUALIZAÇÃO}}
+      </p>
+    </div>
+
+    <div class="aviso-monitoramento editavel editavel-clara" contenteditable="true">
+      Permaneceremos monitorando o evento e enviaremos novos informes conforme necessário.<br>
+      <b>Equipe Movisafe / Smart CICC</b>
+    </div>
+
+  </div>
+
+  <!-- ===== RODAPÉ — imagem cheia (padrão fixo; troque a imagem a cada envio, se necessário) ===== -->
+  <div class="rodape">
+    <img id="rodapeLogoImg" class="rodape-imagem" src="{{URL_IMAGEM_RODAPE}}" alt="" onerror="this.style.display='none'">
+    <button type="button" class="botao-foto botao-foto-rodape" onclick="document.getElementById('inputLogoRodape').click()">🖼️ Trocar imagem</button>
+    <input type="file" id="inputLogoRodape" accept="image/*" style="display:none">
+  </div>
+
+</div>
+
+<script>
+  document.getElementById('inputFotoCapa').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      document.querySelector('.cabecalho-capa').style.setProperty('--foto-capa', 'url(' + ev.target.result + ')');
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('inputLogoRodape').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = document.getElementById('rodapeLogoImg');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+  document.getElementById('inputImagemMapa').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = document.getElementById('imagemMapaImg');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      document.getElementById('mapaPlaceholder').style.display = 'none';
+      document.getElementById('botaoTrocarMapa').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+</script>
+
+</body>
+</html>

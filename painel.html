@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOVINEWS — Painel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Oswald:ital,wght@0,600;0,700;1,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --preto:#000000;
+    --azul:#0e1e3f;
+    --vinho:#66252d;
+    --cinza:#eaeaea;
+    --branco:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter',Arial,sans-serif;
+    background:#eef1f6;
+    color:var(--preto);
+  }
+
+  /* ===== SHELL DO PAINEL ===== */
+  .app-shell{
+    display:flex;
+    min-height:100vh;
+  }
+  .sidebar{
+    width:230px;
+    flex-shrink:0;
+    background:var(--preto);
+    color:var(--branco);
+    display:flex;
+    flex-direction:column;
+    padding:20px 0;
+  }
+  .sidebar-logo{
+    font-family:'Poppins',sans-serif;
+    font-weight:800;
+    font-size:18px;
+    letter-spacing:0.5px;
+    padding:0 20px 20px;
+    border-bottom:1px solid rgba(255,255,255,0.12);
+    margin-bottom:14px;
+  }
+  .sidebar-logo .movi{color:#e2725b;}
+  .sidebar-logo .safe{color:#6f8fc9;}
+  .nav-secao{
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.45);
+    padding:16px 20px 6px;
+  }
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 20px;
+    font-size:13.5px;
+    font-weight:600;
+    color:rgba(255,255,255,0.85);
+    cursor:pointer;
+    border-left:3px solid transparent;
+    transition:background .15s, border-color .15s;
+  }
+  .nav-item:hover{background:rgba(255,255,255,0.06);}
+  .nav-item.ativo{
+    background:rgba(255,255,255,0.1);
+    border-left-color:var(--vinho);
+    color:var(--branco);
+  }
+  .nav-item .icone{font-size:15px;width:18px;text-align:center;}
+
+  .conteudo{
+    flex:1;
+    min-width:0;
+    padding:28px 32px;
+    overflow-y:auto;
+  }
+  .view{display:none;}
+  .view.ativa{display:block;}
+
+  .cabecalho-view{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .cabecalho-view h1{
+    font-family:'Poppins',sans-serif;
+    font-size:20px;
+    font-weight:700;
+    color:var(--azul);
+  }
+  .cabecalho-view p{
+    font-size:12.5px;
+    color:#666;
+    margin-top:2px;
+  }
+  .acoes-view{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .seletor-template{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .seletor-template label{
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:#666;
+  }
+  .seletor-template select{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    padding:7px 9px;
+    border:1px solid #d3d8e2;
+    border-radius:6px;
+    background:var(--branco);
+  }
+
+  .btn{
+    font-family:'Inter',sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:9px 16px;
+    border-radius:7px;
+    border:1px solid transparent;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .btn-primario{background:var(--azul);color:var(--branco);}
+  .btn-primario:hover{background:#152a54;}
+  .btn-sucesso{background:var(--vinho);color:var(--branco);}
+  .btn-sucesso:hover{background:#7a2c35;}
+  .btn-secundario{background:var(--branco);color:var(--azul);border-color:#c7cede;}
+  .btn-secundario:hover{background:#f1f3f8;}
+  .btn-perigo{background:var(--branco);color:#a33;border-color:#e3bcbc;}
+  .btn-perigo:hover{background:#fdf1f1;}
+  .btn-mini{font-size:11.5px;padding:6px 10px;border-radius:6px;}
+
+  /* ===== EDITOR ===== */
+  .editor-wrap{
+    background:var(--branco);
+    border-radius:10px;
+    padding:20px;
+    box-shadow:0 2px 10px rgba(14,30,63,0.08);
+  }
+  .campo-meta{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:18px;
+    padding-bottom:18px;
+    border-bottom:1px solid #eee;
+  }
+  .campo-meta label{
+    display:block;
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:#666;
+    margin-bottom:4px;
+  }
+  .campo-meta select, .campo-meta input{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    padding:7px 9px;
+    border:1px solid #d3d8e2;
+    border-radius:6px;
+  }
+  .status-badge{
+    display:inline-block;
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .status-rascunho{background:#f1e9d2;color:#8a6d1d;}
+  .status-publicado{background:#dcefe1;color:#1f7a3d;}
+
+  #boletim-canvas{
+    display:flex;
+    justify-content:center;
+    background:#dfe3ec;
+    padding:24px;
+    border-radius:8px;
+  }
+
+  /* ===== ESTILOS DO BOLETIM (mesmo padrão do template) ===== */
+  .boletim{
+    max-width:760px;
+    width:100%;
+    background:linear-gradient(180deg,#ffffff 0%, #fbfbfd 100%);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 18px 40px rgba(14,30,63,0.16), 0 2px 8px rgba(14,30,63,0.08);
+  }
+  .boletim-faixa-topo{height:5px;background:linear-gradient(90deg, var(--vinho) 0%, var(--azul) 100%);}
+  .cabecalho-capa{
+    position:relative;min-height:300px;background-color:var(--preto);
+    background-image:linear-gradient(90deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.90) 38%, rgba(0,0,0,0.45) 68%, rgba(0,0,0,0.10) 100%),
+      var(--foto-capa, repeating-linear-gradient(135deg, #1a1a1a 0 18px, #101010 18px 36px));
+    background-size:cover, cover;background-position:center, center;overflow:hidden;color:var(--branco);
+  }
+  .capa-chevrons{position:absolute;left:0;top:0;bottom:0;width:26px;z-index:2;display:flex;flex-direction:column;justify-content:space-evenly;}
+  .capa-chevrons span{display:block;height:52px;background:var(--vinho);clip-path:polygon(0 0, 100% 22%, 100% 78%, 0 100%, 28% 50%);}
+  .capa-chevrons span:nth-child(even){opacity:0.55;}
+  .capa-conteudo{position:relative;z-index:3;padding:30px 36px 28px 40px;}
+  .capa-logo{font-family:'Poppins',sans-serif;font-weight:800;font-size:19px;letter-spacing:0.5px;margin-bottom:16px;}
+  .capa-logo .movi{color:#e2725b;} .capa-logo .safe{color:#6f8fc9;}
+  .capa-eyebrow{font-family:'Oswald',sans-serif;font-weight:600;font-size:15px;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px;}
+  .capa-titulo{font-family:'Oswald',sans-serif;font-style:italic;font-weight:700;font-size:56px;line-height:0.92;text-transform:uppercase;margin-bottom:10px;}
+  .capa-linha-accent{width:150px;height:5px;margin-bottom:14px;background:repeating-linear-gradient(115deg, var(--vinho) 0 8px, transparent 8px 14px);}
+  .capa-sub{font-family:'Oswald',sans-serif;font-weight:700;font-size:38px;text-transform:uppercase;line-height:1;margin-bottom:14px;}
+  .capa-linha-accent-fina{width:90px;height:3px;margin-bottom:10px;background:repeating-linear-gradient(115deg, var(--vinho) 0 6px, transparent 6px 11px);}
+  .capa-local{font-family:'Oswald',sans-serif;font-weight:600;font-size:19px;letter-spacing:1px;text-transform:uppercase;}
+  .info-secundaria{background:var(--preto);color:var(--branco);padding:16px 32px 20px;}
+  .confidencial{font-size:11px;opacity:0.75;line-height:1.5;margin-bottom:12px;}
+  .meta-linha{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;opacity:0.95;margin-bottom:12px;}
+  .meta-linha b{font-weight:600;}
+  .titulo-boletim{font-family:'Poppins',sans-serif;font-weight:700;font-size:20px;line-height:1.3;opacity:0.95;}
+  .faixa-alerta{display:flex;align-items:center;gap:8px;background:linear-gradient(90deg,#fff3f0 0%, #fbe6e1 100%);border-bottom:1px solid #f0d8d3;padding:10px 32px;font-size:12.5px;font-weight:600;color:var(--vinho);}
+  .faixa-alerta .ponto{width:9px;height:9px;border-radius:50%;background:var(--vinho);flex-shrink:0;}
+  .corpo{padding:28px 32px 8px;background:linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);}
+  .resumo{font-size:15px;line-height:1.65;color:#1a1a1a;background:linear-gradient(135deg,#eef1f7 0%, #e4e9f3 100%);border-left:4px solid var(--azul);padding:14px 16px;border-radius:6px;margin-bottom:26px;box-shadow:0 2px 8px rgba(14,30,63,0.05);}
+  .resumo b{color:var(--azul);}
+  .secao{margin-bottom:26px;}
+  .secao-titulo{font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;letter-spacing:0.4px;text-transform:uppercase;color:var(--azul);display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;position:relative;}
+  .secao-titulo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg, var(--azul) 0%, var(--vinho) 100%);opacity:0.35;}
+  .secao-titulo .icone{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg, var(--azul) 0%, var(--vinho) 100%);color:var(--branco);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+  .secao p{font-size:14px;line-height:1.7;color:#252525;margin-bottom:10px;}
+  .secao ul{list-style:none;padding:0;}
+  .secao li{font-size:13.5px;line-height:1.6;padding:8px 0 8px 20px;position:relative;border-bottom:1px dashed #e2e2e2;color:#2a2a2a;}
+  .secao li:last-child{border-bottom:none;}
+  .secao li::before{content:"";position:absolute;left:0;top:15px;width:7px;height:7px;border-radius:50%;background:var(--vinho);}
+  .secao li b{color:var(--preto);}
+  .mapa-upload-wrap{position:relative;margin:12px 0 16px;}
+  .imagem-mapa{width:100%;border-radius:10px;border:1px solid #e2e2e2;display:none;box-shadow:0 4px 14px rgba(14,30,63,0.08);}
+  .mapa-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%;min-height:170px;border:2px dashed #c3c9d6;border-radius:10px;background:linear-gradient(135deg, #f3f5f9 0%, #e6eaf2 100%);color:#6b7387;font-size:13px;font-weight:600;text-align:center;cursor:pointer;padding:20px;transition:background .15s, border-color .15s;}
+  .mapa-placeholder:hover{background:linear-gradient(135deg, #eaeef5 0%, #dde3ee 100%);border-color:#a9b1c4;}
+  .mapa-placeholder-icone{font-size:30px;}
+  .legenda-fonte{font-size:11px;color:#777;font-style:italic;margin-top:-8px;margin-bottom:16px;}
+  .grade-info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px;}
+  .card-info{background:linear-gradient(135deg, #f2f4f8 0%, #e6eaf1 100%);border-radius:8px;padding:12px 14px;box-shadow:0 2px 6px rgba(14,30,63,0.05);}
+  .card-info span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;color:#666;font-weight:600;margin-bottom:4px;}
+  .card-info strong{font-size:14px;color:var(--preto);}
+  .orientacoes{background:linear-gradient(135deg, #eef2fb 0%, #e1e8f6 100%);border-left:4px solid var(--azul);border-radius:8px;padding:14px 16px;box-shadow:0 2px 8px rgba(14,30,63,0.05);}
+  .orientacoes li::before{background:var(--azul);}
+  .fonte-oficial{font-size:12px;color:#555;margin-top:4px;}
+  .fonte-oficial a{color:var(--azul);text-decoration:none;font-weight:600;}
+  .aviso-monitoramento{margin-top:22px;margin-bottom:24px;padding:14px 16px;border-radius:8px;background:linear-gradient(135deg, #f4f0ee 0%, #efe3e1 100%);border-left:4px solid var(--vinho);font-size:13px;line-height:1.6;color:#3a2c2c;box-shadow:0 2px 8px rgba(102,37,45,0.06);}
+  .aviso-monitoramento b{color:var(--vinho);}
+  .rodape{position:relative;background:var(--preto);min-height:150px;overflow:hidden;}
+  .rodape-imagem{display:block;width:100%;height:150px;object-fit:cover;}
+  .botao-foto-rodape{top:16px;right:18px;background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.35);}
+  .botao-foto-rodape:hover{background:rgba(255,255,255,0.22);}
+  .editavel{outline:1px dashed transparent;border-radius:4px;padding:2px 5px;margin:-2px -5px;cursor:text;transition:background .15s, outline-color .15s;}
+  .editavel:hover{outline-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);}
+  .editavel:focus{outline:1px dashed rgba(255,255,255,0.7);background:rgba(255,255,255,0.1);}
+  .editavel-clara:hover{outline-color:rgba(14,30,63,0.35);background:rgba(14,30,63,0.05);}
+  .editavel-clara:focus{outline:1px dashed rgba(14,30,63,0.6);background:rgba(14,30,63,0.07);}
+  .botao-foto{position:absolute;top:16px;right:18px;z-index:4;background:rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.4);color:var(--branco);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .botao-foto:hover{background:rgba(0,0,0,0.75);}
+  .botao-foto-mapa{display:none;top:12px;right:12px;}
+
+  /* ===== GERENCIAR: TABELAS / LISTAS ===== */
+  .barra-filtros{
+    display:flex;
+    gap:10px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .barra-filtros input, .barra-filtros select{
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    padding:9px 12px;
+    border:1px solid #d3d8e2;
+    border-radius:7px;
+    background:var(--branco);
+  }
+  .barra-filtros input{flex:1;min-width:200px;}
+  .tabela-wrap{
+    background:var(--branco);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(14,30,63,0.08);
+  }
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:#666;
+    font-weight:700;
+    padding:12px 16px;
+    background:#f4f6fa;
+    border-bottom:1px solid #e6e9f0;
+  }
+  tbody td{
+    padding:12px 16px;
+    font-size:13px;
+    border-bottom:1px solid #eef0f4;
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#fafbfd;}
+  .celula-titulo strong{display:block;color:var(--preto);}
+  .celula-titulo span{display:block;font-size:11.5px;color:#888;margin-top:2px;}
+  .celula-acoes{display:flex;gap:6px;flex-wrap:wrap;}
+  .estado-vazio{
+    padding:60px 20px;
+    text-align:center;
+    color:#888;
+    font-size:13.5px;
+  }
+  .estado-vazio .icone-vazio{font-size:36px;margin-bottom:10px;display:block;}
+
+  /* ===== FORMULÁRIO DE NOTÍCIA ===== */
+  .campo-form{margin-bottom:16px;}
+  .campo-form label{
+    display:block;
+    font-size:10.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:#666;
+    margin-bottom:6px;
+  }
+  .campo-form input[type="text"], .campo-form select, .campo-form textarea{
+    width:100%;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    padding:9px 11px;
+    border:1px solid #d3d8e2;
+    border-radius:7px;
+  }
+  .campo-form textarea{resize:vertical;}
+  .mini-toolbar{display:flex;gap:6px;margin-bottom:6px;}
+  .mini-toolbar button{
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    padding:6px 10px;
+    border:1px solid #d3d8e2;
+    border-radius:6px;
+    background:var(--branco);
+    cursor:pointer;
+  }
+  .mini-toolbar button:hover{background:#f1f3f8;}
+  .corpo-editavel{
+    min-height:180px;
+    border:1px solid #d3d8e2;
+    border-radius:7px;
+    padding:12px 14px;
+    font-size:14px;
+    line-height:1.7;
+    color:#222;
+  }
+  .corpo-editavel:focus{outline:2px solid rgba(14,30,63,0.25);}
+
+  .placeholder-construcao{
+    background:var(--branco);
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(14,30,63,0.08);
+    padding:60px 30px;
+    text-align:center;
+    color:#666;
+  }
+  .placeholder-construcao .icone-grande{font-size:44px;margin-bottom:14px;display:block;}
+  .placeholder-construcao h2{font-family:'Poppins',sans-serif;color:var(--azul);font-size:17px;margin-bottom:8px;}
+  .placeholder-construcao p{font-size:13px;line-height:1.6;max-width:420px;margin:0 auto;}
+
+  @media (max-width:760px){
+    .app-shell{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;overflow-x:auto;padding:10px;}
+    .sidebar-logo, .nav-secao{display:none;}
+    .nav-item{border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+    .nav-item.ativo{border-left:none;border-bottom-color:var(--vinho);}
+    .campo-meta{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ===== MENU LATERAL ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="movi">MOVI</span><span class="safe">SAFE</span></div>
+
+    <div class="nav-secao">Redação</div>
+    <div class="nav-item ativo" data-view="editor"><span class="icone">📰</span> Boletim</div>
+    <div class="nav-item" data-view="editor-noticia"><span class="icone">📝</span> Notícia</div>
+
+    <div class="nav-secao">Gerenciar</div>
+    <div class="nav-item" data-view="noticias"><span class="icone">🗂️</span> Notícias</div>
+    <div class="nav-item" data-view="boletins"><span class="icone">📋</span> Boletins</div>
+  </aside>
+
+  <!-- ===== CONTEÚDO ===== -->
+  <main class="conteudo">
+
+    <!-- ---- VIEW: EDITOR DE BOLETIM ---- -->
+    <section id="view-editor" class="view ativa">
+      <div class="cabecalho-view">
+        <div>
+          <h1 id="editor-titulo-view">Novo Boletim</h1>
+          <p>Edite os campos diretamente no boletim abaixo, depois salve como rascunho ou publique.</p>
+        </div>
+        <div class="acoes-view">
+          <button class="btn btn-secundario" onclick="novoBoletim()">➕ Novo</button>
+          <button class="btn btn-secundario" onclick="baixarHtmlAtual()">⬇️ Baixar HTML</button>
+          <button class="btn btn-primario" onclick="salvarBoletim('rascunho')">💾 Salvar rascunho</button>
+          <button class="btn btn-sucesso" onclick="salvarBoletim('publicado')">🚀 Publicar</button>
+        </div>
+      </div>
+
+      <div class="seletor-template">
+        <label for="select-template">Modelo</label>
+        <select id="select-template" onchange="trocarTemplate()">
+          <option value="operacao-policial">Operações Policiais</option>
+          <option value="interdicao">Interdições Programadas</option>
+          <option value="grande-evento">Grandes Eventos</option>
+          <option value="informativo-seguranca">Informativo de Segurança</option>
+        </select>
+      </div>
+
+      <div id="boletim-canvas"></div>
+    </section>
+
+    <!-- ---- VIEW: EDITOR DE NOTÍCIA ---- -->
+    <section id="view-editor-noticia" class="view">
+      <div class="cabecalho-view">
+        <div>
+          <h1 id="noticia-titulo-view">Nova Notícia</h1>
+          <p>Preencha os campos abaixo, depois salve como rascunho ou publique.</p>
+        </div>
+        <div class="acoes-view">
+          <button class="btn btn-secundario" onclick="novaNoticia()">➕ Novo</button>
+          <button class="btn btn-primario" onclick="salvarNoticia('rascunho')">💾 Salvar rascunho</button>
+          <button class="btn btn-sucesso" onclick="salvarNoticia('publicado')">🚀 Publicar</button>
+        </div>
+      </div>
+
+      <div class="editor-wrap" style="max-width:760px;">
+        <div class="campo-form">
+          <label>Categoria</label>
+          <select id="noticia-categoria">
+            <option>Geral</option>
+            <option>Segurança</option>
+            <option>Trânsito</option>
+            <option>Comunidade</option>
+            <option>Outra</option>
+          </select>
+        </div>
+        <div class="campo-form">
+          <label>Título</label>
+          <input type="text" id="noticia-titulo-input" placeholder="Título da notícia">
+        </div>
+        <div class="campo-form">
+          <label>Resumo / linha fina</label>
+          <textarea id="noticia-resumo" rows="2" placeholder="Breve resumo que aparece na listagem"></textarea>
+        </div>
+        <div class="campo-form">
+          <label>Imagem de capa</label>
+          <div class="mapa-upload-wrap" style="margin:0;">
+            <img id="noticiaCapaImg" class="imagem-mapa" src="" alt="Capa da notícia" onerror="this.style.display='none';">
+            <div id="noticiaCapaPlaceholder" class="mapa-placeholder" onclick="document.getElementById('noticiaInputCapa').click()">
+              <span class="mapa-placeholder-icone">🖼️</span>
+              <span>Clique para adicionar imagem de capa</span>
+            </div>
+            <button type="button" id="noticiaBotaoTrocarCapa" class="botao-foto botao-foto-mapa" onclick="document.getElementById('noticiaInputCapa').click()">🖼️ Trocar imagem</button>
+            <input type="file" id="noticiaInputCapa" accept="image/*" style="display:none">
+          </div>
+        </div>
+        <div class="campo-form">
+          <label>Corpo da notícia</label>
+          <div class="mini-toolbar">
+            <button type="button" onclick="formatarTexto('bold')"><b>B</b></button>
+            <button type="button" onclick="formatarTexto('italic')"><i>I</i></button>
+            <button type="button" onclick="formatarTexto('insertUnorderedList')">• Lista</button>
+            <button type="button" onclick="inserirLink()">🔗 Link</button>
+          </div>
+          <div id="noticia-corpo" class="corpo-editavel" contenteditable="true">Escreva o corpo da notícia aqui...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- VIEW: GERÊNCIA DE NOTÍCIAS ---- -->
+    <section id="view-noticias" class="view">
+      <div class="cabecalho-view">
+        <div>
+          <h1>Gerência de Notícias</h1>
+          <p>Localize, edite ou reabra notícias salvas anteriormente.</p>
+        </div>
+        <div class="acoes-view">
+          <button class="btn btn-primario" onclick="irParaNovaNoticia()">➕ Nova Notícia</button>
+        </div>
+      </div>
+
+      <div class="barra-filtros">
+        <input type="text" id="noticia-filtro-busca" placeholder="Buscar por título, categoria..." oninput="renderizarListaNoticias()">
+        <select id="noticia-filtro-status" onchange="renderizarListaNoticias()">
+          <option value="">Todos os status</option>
+          <option value="rascunho">Rascunho</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+
+      <div class="tabela-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Título / Resumo</th>
+              <th>Categoria</th>
+              <th>Status</th>
+              <th>Atualizado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-noticias-corpo"></tbody>
+        </table>
+        <div id="noticias-estado-vazio" class="estado-vazio" style="display:none;">
+          <span class="icone-vazio">📭</span>
+          Nenhuma notícia encontrada.
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- VIEW: GERÊNCIA DE BOLETINS ---- -->
+    <section id="view-boletins" class="view">
+      <div class="cabecalho-view">
+        <div>
+          <h1>Gerência de Boletins</h1>
+          <p>Localize, edite ou reabra boletins salvos anteriormente.</p>
+        </div>
+        <div class="acoes-view">
+          <button class="btn btn-primario" onclick="irParaNovoBoletim()">➕ Novo Boletim</button>
+        </div>
+      </div>
+
+      <div class="barra-filtros">
+        <input type="text" id="filtro-busca" placeholder="Buscar por título, local..." oninput="renderizarListaBoletins()">
+        <select id="filtro-status" onchange="renderizarListaBoletins()">
+          <option value="">Todos os status</option>
+          <option value="rascunho">Rascunho</option>
+          <option value="publicado">Publicado</option>
+        </select>
+      </div>
+
+      <div class="tabela-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Título / Local</th>
+              <th>Data/Hora do fato</th>
+              <th>Status</th>
+              <th>Atualizado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-boletins-corpo"></tbody>
+        </table>
+        <div id="boletins-estado-vazio" class="estado-vazio" style="display:none;">
+          <span class="icone-vazio">📭</span>
+          Nenhum boletim encontrado.
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  var CHAVE_STORAGE = 'movinews_boletins';
+  var editandoId = null;
+
+  var BOLETIM_TEMPLATE = `
+<div class="boletim">
+  <div class="boletim-faixa-topo"></div>
+  <div class="cabecalho-capa" style="--foto-capa:url('');">
+    <button type="button" class="botao-foto" onclick="document.getElementById('inputFotoCapa').click()">🖼️ Trocar foto</button>
+    <input type="file" id="inputFotoCapa" accept="image/*" style="display:none">
+    <div class="capa-chevrons"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="capa-conteudo">
+      <div class="capa-logo"><span class="movi">MOVI</span><span class="safe">SAFE</span></div>
+      <div class="capa-eyebrow">Boletim de</div>
+      <div class="capa-titulo">Operações</div>
+      <div class="capa-linha-accent"></div>
+      <div class="capa-sub">Policiais</div>
+      <div class="capa-linha-accent-fina"></div>
+      <div class="capa-local editavel" contenteditable="true">{{CIDADE}}</div>
+    </div>
+  </div>
+  <div class="info-secundaria">
+    <div class="confidencial">Este boletim é direcionado exclusivamente aos clientes Movisafe. Noticial informativo confidencial — uso interno e restrito.</div>
+    <div class="meta-linha">
+      <span><b>Local:</b> <span class="editavel" contenteditable="true">{{BAIRRO}}, {{CIDADE}} – {{UF}}</span></span>
+      <span><b>Data/Hora:</b> <span class="editavel" contenteditable="true">{{DATA}} · {{HORA}}</span></span>
+      <span><b>Órgão responsável:</b> <span class="editavel" contenteditable="true">{{ORGAO_RESPONSAVEL}}</span></span>
+    </div>
+    <div class="titulo-boletim editavel" contenteditable="true">{{TÍTULO DA OPERAÇÃO — ex.: Operação Policial de Grande Porte em {{BAIRRO}} Mobiliza Reforço de Segurança}}</div>
+  </div>
+  <div class="faixa-alerta">
+    <span class="ponto"></span>
+    <span class="editavel editavel-clara" contenteditable="true">NÍVEL DE ATENÇÃO: {{BAIXO / MODERADO / ALTO}} — recomenda-se atenção redobrada na região indicada</span>
+  </div>
+  <div class="corpo">
+    <div class="resumo editavel editavel-clara" contenteditable="true">
+      Este Boletim tem o propósito de informar que <b>{{ÓRGÃO — ex.: a Polícia Civil / PM-RJ / Delegacia de Homicídios}}</b>
+      deflagrou, nesta <b>{{DIA DA SEMANA, DD/MM}}</b>, uma operação policial em <b>{{BAIRRO / REGIÃO}}</b>,
+      com o objetivo de {{OBJETIVO DA OPERAÇÃO — ex.: cumprir mandados de busca e apreensão e prisão}}.
+      A ação conta com efetivo de <b>{{Nº AGENTES/VIATURAS, se divulgado}}</b> e segue em andamento.
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">①</span>Resumo da Operação</div>
+      <p class="editavel editavel-clara" contenteditable="true">{{Parágrafo descritivo: motivação da operação, unidades envolvidas, contexto (ex.: combate ao tráfico, cumprimento de mandados, resposta a ocorrência), horário de início e status atual.}}</p>
+      <div class="mapa-upload-wrap">
+        <img id="imagemMapaImg" class="imagem-mapa" src="" alt="Mapa ou foto do local" onerror="this.style.display='none';">
+        <div id="mapaPlaceholder" class="mapa-placeholder" onclick="document.getElementById('inputImagemMapa').click()">
+          <span class="mapa-placeholder-icone">🗺️</span>
+          <span>Clique para adicionar foto ou mapa do local</span>
+        </div>
+        <button type="button" id="botaoTrocarMapa" class="botao-foto botao-foto-mapa" onclick="document.getElementById('inputImagemMapa').click()">🖼️ Trocar imagem</button>
+        <input type="file" id="inputImagemMapa" accept="image/*" style="display:none">
+      </div>
+      <div class="legenda-fonte editavel editavel-clara" contenteditable="true">Fonte: {{NOME DA FONTE OFICIAL}}</div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">②</span>Perímetro / Área de Atuação</div>
+      <ul class="editavel editavel-clara" contenteditable="true">
+        <li><b>{{Via/Bairro 1}}:</b> {{descrição do trecho ou ponto de concentração}}</li>
+        <li><b>{{Via/Bairro 2}}:</b> {{descrição do trecho ou ponto de concentração}}</li>
+        <li><b>{{Via/Bairro 3}}:</b> {{descrição do trecho ou ponto de concentração}}</li>
+      </ul>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">③</span>Impactos na Região</div>
+      <div class="grade-info">
+        <div class="card-info"><span>Vias afetadas</span><strong class="editavel editavel-clara" contenteditable="true">{{Sim / Não — detalhar}}</strong></div>
+        <div class="card-info"><span>Transporte público</span><strong class="editavel editavel-clara" contenteditable="true">{{Normal / Alterado}}</strong></div>
+        <div class="card-info"><span>Comércio local</span><strong class="editavel editavel-clara" contenteditable="true">{{Funcionamento normal / Fechado por recomendação}}</strong></div>
+        <div class="card-info"><span>Previsão de encerramento</span><strong class="editavel editavel-clara" contenteditable="true">{{Horário estimado ou "Sem previsão"}}</strong></div>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">④</span>Orientações de Segurança</div>
+      <div class="orientacoes">
+        <ul class="editavel editavel-clara" contenteditable="true">
+          <li>Evite circular ou permanecer nas proximidades de <b>{{local}}</b> durante o período da operação;</li>
+          <li>Mantenha portas, janelas e portões fechados caso esteja em imóvel na área indicada;</li>
+          <li>Não compartilhe imagens ou a localização de agentes em tempo real;</li>
+          <li>Siga rigorosamente as orientações de agentes de segurança pública presentes no local;</li>
+          <li>Em caso de dúvida ou necessidade, acione a Central Movisafe pelos canais de emergência habituais.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">⑤</span>Fonte</div>
+      <p class="fonte-oficial editavel editavel-clara" contenteditable="true">
+        Fonte: <a href="{{URL_FONTE_OFICIAL}}" target="_blank" rel="noopener">{{NOME DA FONTE OFICIAL — ex.: PMERJ, PCERJ, COR-Rio}}</a>
+        · Atualizado em {{DATA/HORA DA ÚLTIMA ATUALIZAÇÃO}}
+      </p>
+    </div>
+    <div class="aviso-monitoramento editavel editavel-clara" contenteditable="true">
+      Permaneceremos monitorando o evento e enviaremos novos informes conforme necessário.<br>
+      <b>Equipe Movisafe / Smart CICC</b>
+    </div>
+  </div>
+  <div class="rodape">
+    <img id="rodapeLogoImg" class="rodape-imagem" src="" alt="" onerror="this.style.display='none'">
+    <button type="button" class="botao-foto botao-foto-rodape" onclick="document.getElementById('inputLogoRodape').click()">🖼️ Trocar imagem</button>
+    <input type="file" id="inputLogoRodape" accept="image/*" style="display:none">
+  </div>
+</div>`;
+
+  var INTERDICAO_TEMPLATE = `
+<div class="boletim">
+  <div class="boletim-faixa-topo"></div>
+  <div class="cabecalho-capa" style="--foto-capa:url('');">
+    <button type="button" class="botao-foto" onclick="document.getElementById('inputFotoCapa').click()">🖼️ Trocar foto</button>
+    <input type="file" id="inputFotoCapa" accept="image/*" style="display:none">
+    <div class="capa-chevrons"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="capa-conteudo">
+      <div class="capa-logo"><span class="movi">MOVI</span><span class="safe">SAFE</span></div>
+      <div class="capa-eyebrow">Boletim de</div>
+      <div class="capa-titulo">Interdições</div>
+      <div class="capa-linha-accent"></div>
+      <div class="capa-sub">Programadas</div>
+      <div class="capa-linha-accent-fina"></div>
+      <div class="capa-local editavel" contenteditable="true">{{CIDADE}}</div>
+    </div>
+  </div>
+  <div class="info-secundaria">
+    <div class="confidencial">Este boletim é direcionado exclusivamente aos clientes Movisafe. Material informativo confidencial — uso interno e restrito.</div>
+    <div class="meta-linha">
+      <span><b>Local:</b> <span class="editavel" contenteditable="true">{{BAIRRO}}, {{CIDADE}} – {{UF}}</span></span>
+      <span><b>Data/Hora:</b> <span class="editavel" contenteditable="true">{{DATA}} · {{HORA}}</span></span>
+      <span><b>Órgão responsável:</b> <span class="editavel" contenteditable="true">{{ORGAO_RESPONSAVEL}}</span></span>
+    </div>
+    <div class="titulo-boletim editavel" contenteditable="true">{{TÍTULO DA INTERDIÇÃO — ex.: Via Interditada em {{BAIRRO}} para Obras de Manutenção}}</div>
+  </div>
+  <div class="faixa-alerta">
+    <span class="ponto"></span>
+    <span class="editavel editavel-clara" contenteditable="true">NÍVEL DE IMPACTO: {{BAIXO / MODERADO / ALTO}} — planeje rotas alternativas com antecedência</span>
+  </div>
+  <div class="corpo">
+    <div class="resumo editavel editavel-clara" contenteditable="true">
+      Este Boletim tem o propósito de informar que <b>{{ÓRGÃO RESPONSÁVEL — ex.: CET-Rio / Prefeitura / Concessionária}}</b>
+      programou uma interdição de via a partir de <b>{{DATA E HORA DE INÍCIO}}</b>, em <b>{{BAIRRO / REGIÃO}}</b>,
+      com o objetivo de {{MOTIVO DA INTERDIÇÃO — ex.: obras de manutenção, evento programado, ação de infraestrutura}}.
+      A previsão é de que a via seja liberada em <b>{{DATA E HORA DE TÉRMINO}}</b>.
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">①</span>Resumo da Interdição</div>
+      <p class="editavel editavel-clara" contenteditable="true">{{Parágrafo descritivo: motivo da interdição, órgão/empresa responsável, trechos e sentidos afetados, janela de horário e se há repetição em dias seguintes.}}</p>
+      <div class="mapa-upload-wrap">
+        <img id="imagemMapaImg" class="imagem-mapa" src="" alt="Mapa ou foto do local" onerror="this.style.display='none';">
+        <div id="mapaPlaceholder" class="mapa-placeholder" onclick="document.getElementById('inputImagemMapa').click()">
+          <span class="mapa-placeholder-icone">🗺️</span>
+          <span>Clique para adicionar foto ou mapa do local</span>
+        </div>
+        <button type="button" id="botaoTrocarMapa" class="botao-foto botao-foto-mapa" onclick="document.getElementById('inputImagemMapa').click()">🖼️ Trocar imagem</button>
+        <input type="file" id="inputImagemMapa" accept="image/*" style="display:none">
+      </div>
+      <div class="legenda-fonte editavel editavel-clara" contenteditable="true">Fonte: {{NOME DA FONTE OFICIAL}}</div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">②</span>Vias e Trechos Interditados</div>
+      <ul class="editavel editavel-clara" contenteditable="true">
+        <li><b>{{Via/Trecho 1}}:</b> {{sentido/trecho afetado e horário}}</li>
+        <li><b>{{Via/Trecho 2}}:</b> {{sentido/trecho afetado e horário}}</li>
+        <li><b>{{Via/Trecho 3}}:</b> {{sentido/trecho afetado e horário}}</li>
+      </ul>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">③</span>Impactos na Região</div>
+      <div class="grade-info">
+        <div class="card-info"><span>Rotas alternativas</span><strong class="editavel editavel-clara" contenteditable="true">{{Sim / Não — detalhar}}</strong></div>
+        <div class="card-info"><span>Transporte público</span><strong class="editavel editavel-clara" contenteditable="true">{{Normal / Alterado}}</strong></div>
+        <div class="card-info"><span>Comércio/acesso local</span><strong class="editavel editavel-clara" contenteditable="true">{{Normal / Restrito}}</strong></div>
+        <div class="card-info"><span>Previsão de liberação</span><strong class="editavel editavel-clara" contenteditable="true">{{Horário estimado ou "Sem previsão"}}</strong></div>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">④</span>Orientações de Segurança</div>
+      <div class="orientacoes">
+        <ul class="editavel editavel-clara" contenteditable="true">
+          <li>Planeje o deslocamento com antecedência e evite <b>{{via/trecho interditado}}</b> no período informado;</li>
+          <li>Considere rotas alternativas sugeridas ou o uso de transporte público, quando aplicável;</li>
+          <li>Redobre a atenção em desvios, faixas reduzidas e sinalização temporária;</li>
+          <li>Reserve tempo extra para compromissos e reuniões na região afetada;</li>
+          <li>Em caso de dúvida ou necessidade, acione a Central Movisafe pelos canais de emergência habituais.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">⑤</span>Fonte</div>
+      <p class="fonte-oficial editavel editavel-clara" contenteditable="true">
+        Fonte: <a href="{{URL_FONTE_OFICIAL}}" target="_blank" rel="noopener">{{NOME DA FONTE OFICIAL — ex.: PMERJ, PCERJ, COR-Rio}}</a>
+        · Atualizado em {{DATA/HORA DA ÚLTIMA ATUALIZAÇÃO}}
+      </p>
+    </div>
+    <div class="aviso-monitoramento editavel editavel-clara" contenteditable="true">
+      Permaneceremos monitorando o evento e enviaremos novos informes conforme necessário.<br>
+      <b>Equipe Movisafe / Smart CICC</b>
+    </div>
+  </div>
+  <div class="rodape">
+    <img id="rodapeLogoImg" class="rodape-imagem" src="" alt="" onerror="this.style.display='none'">
+    <button type="button" class="botao-foto botao-foto-rodape" onclick="document.getElementById('inputLogoRodape').click()">🖼️ Trocar imagem</button>
+    <input type="file" id="inputLogoRodape" accept="image/*" style="display:none">
+  </div>
+</div>`;
+
+  var EVENTO_TEMPLATE = `
+<div class="boletim">
+  <div class="boletim-faixa-topo"></div>
+  <div class="cabecalho-capa" style="--foto-capa:url('');">
+    <button type="button" class="botao-foto" onclick="document.getElementById('inputFotoCapa').click()">🖼️ Trocar foto</button>
+    <input type="file" id="inputFotoCapa" accept="image/*" style="display:none">
+    <div class="capa-chevrons"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="capa-conteudo">
+      <div class="capa-logo"><span class="movi">MOVI</span><span class="safe">SAFE</span></div>
+      <div class="capa-eyebrow">Boletim de</div>
+      <div class="capa-titulo">Grandes</div>
+      <div class="capa-linha-accent"></div>
+      <div class="capa-sub">Eventos</div>
+      <div class="capa-linha-accent-fina"></div>
+      <div class="capa-local editavel" contenteditable="true">{{CIDADE}}</div>
+    </div>
+  </div>
+  <div class="info-secundaria">
+    <div class="confidencial">Este boletim é direcionado exclusivamente aos clientes Movisafe. Material informativo confidencial — uso interno e restrito.</div>
+    <div class="meta-linha">
+      <span><b>Local:</b> <span class="editavel" contenteditable="true">{{BAIRRO}}, {{CIDADE}} – {{UF}}</span></span>
+      <span><b>Data/Hora:</b> <span class="editavel" contenteditable="true">{{DATA}} · {{HORA}}</span></span>
+      <span><b>Órgão responsável:</b> <span class="editavel" contenteditable="true">{{ORGAO_RESPONSAVEL}}</span></span>
+    </div>
+    <div class="titulo-boletim editavel" contenteditable="true">{{TÍTULO DO EVENTO — ex.: {{NOME DO EVENTO}} Reúne Grande Público em {{BAIRRO}}}}</div>
+  </div>
+  <div class="faixa-alerta">
+    <span class="ponto"></span>
+    <span class="editavel editavel-clara" contenteditable="true">STATUS DO EVENTO: {{PROGRAMADO / EM ANDAMENTO / ENCERRADO}} — grande fluxo de público previsto na região</span>
+  </div>
+  <div class="corpo">
+    <div class="resumo editavel editavel-clara" contenteditable="true">
+      Este Boletim tem o propósito de informar sobre <b>{{NOME DO EVENTO}}</b>, programado para
+      <b>{{DATA E HORÁRIO}}</b>, em <b>{{LOCAL / BAIRRO / REGIÃO}}</b>, com público estimado de
+      <b>{{PÚBLICO ESTIMADO, se divulgado}}</b>. O evento é organizado por {{ORGANIZADOR/ÓRGÃO RESPONSÁVEL}}.
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">①</span>Resumo do Evento</div>
+      <p class="editavel editavel-clara" contenteditable="true">{{Parágrafo descritivo: natureza do evento, organizador, estrutura montada (palco, arquibancadas, bloqueios), esquema especial de segurança e trânsito previsto.}}</p>
+      <div class="mapa-upload-wrap">
+        <img id="imagemMapaImg" class="imagem-mapa" src="" alt="Mapa ou foto do local" onerror="this.style.display='none';">
+        <div id="mapaPlaceholder" class="mapa-placeholder" onclick="document.getElementById('inputImagemMapa').click()">
+          <span class="mapa-placeholder-icone">🗺️</span>
+          <span>Clique para adicionar foto ou mapa do local</span>
+        </div>
+        <button type="button" id="botaoTrocarMapa" class="botao-foto botao-foto-mapa" onclick="document.getElementById('inputImagemMapa').click()">🖼️ Trocar imagem</button>
+        <input type="file" id="inputImagemMapa" accept="image/*" style="display:none">
+      </div>
+      <div class="legenda-fonte editavel editavel-clara" contenteditable="true">Fonte: {{NOME DA FONTE OFICIAL}}</div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">②</span>Local e Estrutura do Evento</div>
+      <ul class="editavel editavel-clara" contenteditable="true">
+        <li><b>{{Ponto de acesso/entrada}}:</b> {{descrição}}</li>
+        <li><b>{{Área de concentração/palco}}:</b> {{descrição}}</li>
+        <li><b>{{Perímetro de segurança}}:</b> {{descrição}}</li>
+      </ul>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">③</span>Impactos na Região</div>
+      <div class="grade-info">
+        <div class="card-info"><span>Vias afetadas</span><strong class="editavel editavel-clara" contenteditable="true">{{Sim / Não — detalhar}}</strong></div>
+        <div class="card-info"><span>Transporte público</span><strong class="editavel editavel-clara" contenteditable="true">{{Normal / Reforçado / Alterado}}</strong></div>
+        <div class="card-info"><span>Comércio local</span><strong class="editavel editavel-clara" contenteditable="true">{{Funcionamento normal / Fechado por recomendação}}</strong></div>
+        <div class="card-info"><span>Previsão de encerramento</span><strong class="editavel editavel-clara" contenteditable="true">{{Horário estimado ou "Sem previsão"}}</strong></div>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">④</span>Orientações de Segurança</div>
+      <div class="orientacoes">
+        <ul class="editavel editavel-clara" contenteditable="true">
+          <li>Chegue com antecedência e evite deixar veículos em <b>{{via/local}}</b> durante o evento;</li>
+          <li>Fique atento a aglomerações e mantenha distância de saídas de emergência desobstruídas;</li>
+          <li>Combine ponto de encontro com seu grupo caso haja perda de sinal ou grande fluxo de pessoas;</li>
+          <li>Siga as orientações da equipe de segurança e sinalização do evento;</li>
+          <li>Em caso de dúvida ou necessidade, acione a Central Movisafe pelos canais de emergência habituais.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">⑤</span>Fonte</div>
+      <p class="fonte-oficial editavel editavel-clara" contenteditable="true">
+        Fonte: <a href="{{URL_FONTE_OFICIAL}}" target="_blank" rel="noopener">{{NOME DA FONTE OFICIAL — ex.: PMERJ, PCERJ, COR-Rio}}</a>
+        · Atualizado em {{DATA/HORA DA ÚLTIMA ATUALIZAÇÃO}}
+      </p>
+    </div>
+    <div class="aviso-monitoramento editavel editavel-clara" contenteditable="true">
+      Permaneceremos monitorando o evento e enviaremos novos informes conforme necessário.<br>
+      <b>Equipe Movisafe / Smart CICC</b>
+    </div>
+  </div>
+  <div class="rodape">
+    <img id="rodapeLogoImg" class="rodape-imagem" src="" alt="" onerror="this.style.display='none'">
+    <button type="button" class="botao-foto botao-foto-rodape" onclick="document.getElementById('inputLogoRodape').click()">🖼️ Trocar imagem</button>
+    <input type="file" id="inputLogoRodape" accept="image/*" style="display:none">
+  </div>
+</div>`;
+
+  var INFORMATIVO_TEMPLATE = `
+<div class="boletim">
+  <div class="boletim-faixa-topo"></div>
+  <div class="cabecalho-capa" style="--foto-capa:url('');">
+    <button type="button" class="botao-foto" onclick="document.getElementById('inputFotoCapa').click()">🖼️ Trocar foto</button>
+    <input type="file" id="inputFotoCapa" accept="image/*" style="display:none">
+    <div class="capa-chevrons"><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="capa-conteudo">
+      <div class="capa-logo"><span class="movi">MOVI</span><span class="safe">SAFE</span></div>
+      <div class="capa-eyebrow">Boletim</div>
+      <div class="capa-titulo">Informativo</div>
+      <div class="capa-linha-accent"></div>
+      <div class="capa-sub">de Segurança</div>
+      <div class="capa-linha-accent-fina"></div>
+      <div class="capa-local editavel" contenteditable="true">{{CIDADE}}</div>
+    </div>
+  </div>
+  <div class="info-secundaria">
+    <div class="confidencial">Este boletim é direcionado exclusivamente aos clientes Movisafe. Material informativo confidencial — uso interno e restrito.</div>
+    <div class="meta-linha">
+      <span><b>Local:</b> <span class="editavel" contenteditable="true">{{BAIRRO}}, {{CIDADE}} – {{UF}}</span></span>
+      <span><b>Data/Hora:</b> <span class="editavel" contenteditable="true">{{DATA}} · {{HORA}}</span></span>
+      <span><b>Órgão responsável:</b> <span class="editavel" contenteditable="true">{{ORGAO_RESPONSAVEL}}</span></span>
+    </div>
+    <div class="titulo-boletim editavel" contenteditable="true">{{TÍTULO DO INFORMATIVO — ex.: Recomendações de Segurança sobre {{ASSUNTO}}}}</div>
+  </div>
+  <div class="faixa-alerta">
+    <span class="ponto"></span>
+    <span class="editavel editavel-clara" contenteditable="true">NÍVEL DE RELEVÂNCIA: {{BAIXO / MODERADO / ALTO}} — informação de interesse dos clientes Movisafe</span>
+  </div>
+  <div class="corpo">
+    <div class="resumo editavel editavel-clara" contenteditable="true">
+      Este Boletim tem o propósito de informar sobre <b>{{ASSUNTO DO INFORMATIVO}}</b>, identificado em
+      <b>{{DATA}}</b>, com possível impacto para clientes na região de <b>{{BAIRRO / REGIÃO, se aplicável}}</b>.
+      A Movisafe recomenda atenção às orientações abaixo.
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">①</span>Resumo do Informe</div>
+      <p class="editavel editavel-clara" contenteditable="true">{{Parágrafo descritivo: contexto do assunto, fonte da informação, motivo pelo qual é relevante para a segurança dos clientes e eventuais desdobramentos esperados.}}</p>
+      <div class="mapa-upload-wrap">
+        <img id="imagemMapaImg" class="imagem-mapa" src="" alt="Mapa ou foto do local" onerror="this.style.display='none';">
+        <div id="mapaPlaceholder" class="mapa-placeholder" onclick="document.getElementById('inputImagemMapa').click()">
+          <span class="mapa-placeholder-icone">🗺️</span>
+          <span>Clique para adicionar foto ou mapa do local</span>
+        </div>
+        <button type="button" id="botaoTrocarMapa" class="botao-foto botao-foto-mapa" onclick="document.getElementById('inputImagemMapa').click()">🖼️ Trocar imagem</button>
+        <input type="file" id="inputImagemMapa" accept="image/*" style="display:none">
+      </div>
+      <div class="legenda-fonte editavel editavel-clara" contenteditable="true">Fonte: {{NOME DA FONTE OFICIAL}}</div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">②</span>Pontos de Atenção</div>
+      <ul class="editavel editavel-clara" contenteditable="true">
+        <li><b>{{Ponto de atenção 1}}:</b> {{descrição}}</li>
+        <li><b>{{Ponto de atenção 2}}:</b> {{descrição}}</li>
+        <li><b>{{Ponto de atenção 3}}:</b> {{descrição}}</li>
+      </ul>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">③</span>Impacto e Abrangência</div>
+      <div class="grade-info">
+        <div class="card-info"><span>Nível de urgência</span><strong class="editavel editavel-clara" contenteditable="true">{{Baixo / Moderado / Alto}}</strong></div>
+        <div class="card-info"><span>Área impactada</span><strong class="editavel editavel-clara" contenteditable="true">{{Local, região ou "Geral"}}</strong></div>
+        <div class="card-info"><span>Ação recomendada</span><strong class="editavel editavel-clara" contenteditable="true">{{Resumo da ação recomendada}}</strong></div>
+        <div class="card-info"><span>Validade da informação</span><strong class="editavel editavel-clara" contenteditable="true">{{Prazo estimado ou "Até novo aviso"}}</strong></div>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">④</span>Orientações de Segurança</div>
+      <div class="orientacoes">
+        <ul class="editavel editavel-clara" contenteditable="true">
+          <li>Compartilhe esta informação com as equipes/áreas potencialmente impactadas;</li>
+          <li>Reforce os protocolos internos de segurança já estabelecidos para este tipo de situação;</li>
+          <li>Mantenha canais de comunicação abertos com a Central Movisafe durante o período de vigência;</li>
+          <li>Reporte à Movisafe qualquer ocorrência relacionada a este informativo;</li>
+          <li>Em caso de dúvida ou necessidade, acione a Central Movisafe pelos canais de emergência habituais.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo"><span class="icone">⑤</span>Fonte</div>
+      <p class="fonte-oficial editavel editavel-clara" contenteditable="true">
+        Fonte: <a href="{{URL_FONTE_OFICIAL}}" target="_blank" rel="noopener">{{NOME DA FONTE OFICIAL — ex.: PMERJ, PCERJ, COR-Rio}}</a>
+        · Atualizado em {{DATA/HORA DA ÚLTIMA ATUALIZAÇÃO}}
+      </p>
+    </div>
+    <div class="aviso-monitoramento editavel editavel-clara" contenteditable="true">
+      Permaneceremos monitorando o evento e enviaremos novos informes conforme necessário.<br>
+      <b>Equipe Movisafe / Smart CICC</b>
+    </div>
+  </div>
+  <div class="rodape">
+    <img id="rodapeLogoImg" class="rodape-imagem" src="" alt="" onerror="this.style.display='none'">
+    <button type="button" class="botao-foto botao-foto-rodape" onclick="document.getElementById('inputLogoRodape').click()">🖼️ Trocar imagem</button>
+    <input type="file" id="inputLogoRodape" accept="image/*" style="display:none">
+  </div>
+</div>`;
+
+  var TEMPLATES = {
+    'operacao-policial': BOLETIM_TEMPLATE,
+    'interdicao': INTERDICAO_TEMPLATE,
+    'grande-evento': EVENTO_TEMPLATE,
+    'informativo-seguranca': INFORMATIVO_TEMPLATE
+  };
+
+  // ===== NAVEGAÇÃO =====
+  document.querySelectorAll('.nav-item').forEach(function(item){
+    item.addEventListener('click', function(){
+      mostrarView(item.getAttribute('data-view'));
+    });
+  });
+
+  function mostrarView(nome){
+    document.querySelectorAll('.nav-item').forEach(function(i){
+      i.classList.toggle('ativo', i.getAttribute('data-view') === nome);
+    });
+    document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('ativa'); });
+    document.getElementById('view-' + nome).classList.add('ativa');
+    if(nome === 'boletins') renderizarListaBoletins();
+    if(nome === 'noticias') renderizarListaNoticias();
+  }
+
+  function irParaNovoBoletim(){
+    novoBoletim();
+    mostrarView('editor');
+  }
+
+  function irParaNovaNoticia(){
+    novaNoticia();
+    mostrarView('editor-noticia');
+  }
+
+  // ===== EDITOR: upload de imagens (delegado, pois o conteúdo é recriado) =====
+  document.getElementById('boletim-canvas').addEventListener('change', function(e){
+    var alvo = e.target;
+    if(alvo.tagName !== 'INPUT' || alvo.type !== 'file') return;
+    var file = alvo.files && alvo.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      if(alvo.id === 'inputFotoCapa'){
+        document.querySelector('.cabecalho-capa').style.setProperty('--foto-capa', 'url(' + ev.target.result + ')');
+      } else if(alvo.id === 'inputImagemMapa'){
+        var img = document.getElementById('imagemMapaImg');
+        img.src = ev.target.result;
+        img.style.display = 'block';
+        document.getElementById('mapaPlaceholder').style.display = 'none';
+        document.getElementById('botaoTrocarMapa').style.display = 'flex';
+      } else if(alvo.id === 'inputLogoRodape'){
+        var imgR = document.getElementById('rodapeLogoImg');
+        imgR.src = ev.target.result;
+        imgR.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function novoBoletim(){
+    editandoId = null;
+    var modelo = document.getElementById('select-template').value;
+    document.getElementById('boletim-canvas').innerHTML = TEMPLATES[modelo] || BOLETIM_TEMPLATE;
+    document.getElementById('editor-titulo-view').textContent = 'Novo Boletim';
+  }
+
+  function trocarTemplate(){
+    novoBoletim();
+  }
+
+  // ===== PERSISTÊNCIA (localStorage) =====
+  function carregarBoletins(){
+    try{
+      return JSON.parse(localStorage.getItem(CHAVE_STORAGE)) || [];
+    }catch(e){ return []; }
+  }
+  function gravarBoletins(lista){
+    localStorage.setItem(CHAVE_STORAGE, JSON.stringify(lista));
+  }
+
+  function extrairTexto(container, seletor){
+    var el = container.querySelector(seletor);
+    return el ? el.textContent.trim().replace(/\s+/g,' ') : '';
+  }
+
+  function salvarBoletim(status){
+    var canvas = document.getElementById('boletim-canvas');
+    var boletimEl = canvas.querySelector('.boletim');
+    if(!boletimEl){ alert('Nenhum boletim carregado para salvar.'); return; }
+
+    var titulo = extrairTexto(boletimEl, '.titulo-boletim') || '(sem título)';
+    var local = extrairTexto(boletimEl, '.meta-linha > span:nth-child(1)');
+    var dataHora = extrairTexto(boletimEl, '.meta-linha > span:nth-child(2)');
+    var agora = new Date().toISOString();
+
+    var lista = carregarBoletins();
+
+    if(editandoId){
+      var idx = lista.findIndex(function(b){ return b.id === editandoId; });
+      if(idx > -1){
+        lista[idx].titulo = titulo;
+        lista[idx].local = local;
+        lista[idx].dataHora = dataHora;
+        lista[idx].status = status;
+        lista[idx].html = boletimEl.outerHTML;
+        lista[idx].atualizadoEm = agora;
+      }
+    } else {
+      editandoId = 'b_' + Date.now();
+      lista.push({
+        id: editandoId,
+        titulo: titulo,
+        local: local,
+        dataHora: dataHora,
+        status: status,
+        html: boletimEl.outerHTML,
+        criadoEm: agora,
+        atualizadoEm: agora
+      });
+    }
+
+    gravarBoletins(lista);
+    document.getElementById('editor-titulo-view').textContent = 'Editando: ' + titulo;
+    alert(status === 'publicado' ? 'Boletim publicado com sucesso.' : 'Rascunho salvo com sucesso.');
+  }
+
+  function abrirBoletim(id){
+    var lista = carregarBoletins();
+    var registro = lista.find(function(b){ return b.id === id; });
+    if(!registro) return;
+    editandoId = id;
+    document.getElementById('boletim-canvas').innerHTML = registro.html;
+    document.getElementById('editor-titulo-view').textContent = 'Editando: ' + registro.titulo;
+    mostrarView('editor');
+  }
+
+  function duplicarBoletim(id){
+    var lista = carregarBoletins();
+    var registro = lista.find(function(b){ return b.id === id; });
+    if(!registro) return;
+    var copia = Object.assign({}, registro, {
+      id: 'b_' + Date.now(),
+      titulo: registro.titulo + ' (cópia)',
+      status: 'rascunho',
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString()
+    });
+    lista.push(copia);
+    gravarBoletins(lista);
+    renderizarListaBoletins();
+  }
+
+  function excluirBoletim(id){
+    if(!confirm('Excluir este boletim? Esta ação não pode ser desfeita.')) return;
+    var lista = carregarBoletins().filter(function(b){ return b.id !== id; });
+    gravarBoletins(lista);
+    renderizarListaBoletins();
+  }
+
+  function visualizarBoletim(id){
+    var lista = carregarBoletins();
+    var registro = lista.find(function(b){ return b.id === id; });
+    if(!registro) return;
+    var janela = window.open('', '_blank');
+    janela.document.write(montarHtmlCompleto(registro.html));
+    janela.document.close();
+  }
+
+  function montarHtmlCompleto(htmlBoletim){
+    var estilos = document.querySelector('style').innerHTML;
+    return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">' +
+      '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Oswald:ital,wght@0,600;0,700;1,700&display=swap" rel="stylesheet">' +
+      '<style>' + estilos + ' body{padding:32px 16px;background:linear-gradient(165deg,#eef1f6 0%, #dfe3ec 55%, #e6e2e4 100%);}</style></head>' +
+      '<body>' + htmlBoletim + '</body></html>';
+  }
+
+  function baixarHtmlAtual(){
+    var canvas = document.getElementById('boletim-canvas');
+    var boletimEl = canvas.querySelector('.boletim');
+    if(!boletimEl){ alert('Nenhum boletim carregado.'); return; }
+    var htmlCompleto = montarHtmlCompleto(boletimEl.outerHTML);
+    var blob = new Blob([htmlCompleto], {type:'text/html'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'boletim-' + Date.now() + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function formatarData(iso){
+    if(!iso) return '';
+    var d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  function renderizarListaBoletins(){
+    var lista = carregarBoletins().sort(function(a,b){ return new Date(b.atualizadoEm) - new Date(a.atualizadoEm); });
+    var busca = document.getElementById('filtro-busca').value.toLowerCase();
+    var statusFiltro = document.getElementById('filtro-status').value;
+
+    var filtrada = lista.filter(function(b){
+      var bateBusca = !busca || (b.titulo + ' ' + b.local).toLowerCase().indexOf(busca) > -1;
+      var bateStatus = !statusFiltro || b.status === statusFiltro;
+      return bateBusca && bateStatus;
+    });
+
+    var corpo = document.getElementById('tabela-boletins-corpo');
+    var vazio = document.getElementById('boletins-estado-vazio');
+    corpo.innerHTML = '';
+
+    if(filtrada.length === 0){
+      vazio.style.display = 'block';
+      return;
+    }
+    vazio.style.display = 'none';
+
+    filtrada.forEach(function(b){
+      var tr = document.createElement('tr');
+      var statusClasse = b.status === 'publicado' ? 'status-publicado' : 'status-rascunho';
+      var statusLabel = b.status === 'publicado' ? 'Publicado' : 'Rascunho';
+      tr.innerHTML =
+        '<td class="celula-titulo"><strong></strong><span></span></td>' +
+        '<td></td>' +
+        '<td><span class="status-badge ' + statusClasse + '">' + statusLabel + '</span></td>' +
+        '<td></td>' +
+        '<td class="celula-acoes">' +
+          '<button class="btn btn-secundario btn-mini">✏️ Editar</button>' +
+          '<button class="btn btn-secundario btn-mini">👁️ Ver</button>' +
+          '<button class="btn btn-secundario btn-mini">📄 Duplicar</button>' +
+          '<button class="btn btn-perigo btn-mini">🗑️ Excluir</button>' +
+        '</td>';
+
+      tr.querySelector('.celula-titulo strong').textContent = b.titulo;
+      tr.querySelector('.celula-titulo span').textContent = b.local;
+      tr.children[1].textContent = b.dataHora || '—';
+      tr.children[3].textContent = formatarData(b.atualizadoEm);
+
+      var botoes = tr.querySelectorAll('.celula-acoes button');
+      botoes[0].addEventListener('click', function(){ abrirBoletim(b.id); });
+      botoes[1].addEventListener('click', function(){ visualizarBoletim(b.id); });
+      botoes[2].addEventListener('click', function(){ duplicarBoletim(b.id); });
+      botoes[3].addEventListener('click', function(){ excluirBoletim(b.id); });
+
+      corpo.appendChild(tr);
+    });
+  }
+
+  // ===== NOTÍCIAS =====
+  var CHAVE_NOTICIAS = 'movinews_noticias';
+  var editandoNoticiaId = null;
+
+  document.getElementById('noticiaInputCapa').addEventListener('change', function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      var img = document.getElementById('noticiaCapaImg');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      document.getElementById('noticiaCapaPlaceholder').style.display = 'none';
+      document.getElementById('noticiaBotaoTrocarCapa').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function formatarTexto(comando){
+    document.getElementById('noticia-corpo').focus();
+    document.execCommand(comando, false, null);
+  }
+
+  function inserirLink(){
+    var url = prompt('URL do link:');
+    if(!url) return;
+    document.getElementById('noticia-corpo').focus();
+    document.execCommand('createLink', false, url);
+  }
+
+  function novaNoticia(){
+    editandoNoticiaId = null;
+    document.getElementById('noticia-categoria').value = 'Geral';
+    document.getElementById('noticia-titulo-input').value = '';
+    document.getElementById('noticia-resumo').value = '';
+    document.getElementById('noticia-corpo').innerHTML = 'Escreva o corpo da notícia aqui...';
+    var img = document.getElementById('noticiaCapaImg');
+    img.src = '';
+    img.style.display = 'none';
+    document.getElementById('noticiaCapaPlaceholder').style.display = 'flex';
+    document.getElementById('noticiaBotaoTrocarCapa').style.display = 'none';
+    document.getElementById('noticia-titulo-view').textContent = 'Nova Notícia';
+  }
+
+  function carregarNoticias(){
+    try{ return JSON.parse(localStorage.getItem(CHAVE_NOTICIAS)) || []; }catch(e){ return []; }
+  }
+  function gravarNoticias(lista){
+    localStorage.setItem(CHAVE_NOTICIAS, JSON.stringify(lista));
+  }
+
+  function salvarNoticia(status){
+    var titulo = document.getElementById('noticia-titulo-input').value.trim() || '(sem título)';
+    var categoria = document.getElementById('noticia-categoria').value;
+    var resumo = document.getElementById('noticia-resumo').value.trim();
+    var corpoHtml = document.getElementById('noticia-corpo').innerHTML;
+    var capaImg = document.getElementById('noticiaCapaImg');
+    var capa = capaImg.style.display === 'block' ? capaImg.src : '';
+    var agora = new Date().toISOString();
+
+    var lista = carregarNoticias();
+
+    if(editandoNoticiaId){
+      var idx = lista.findIndex(function(m){ return m.id === editandoNoticiaId; });
+      if(idx > -1){
+        lista[idx].titulo = titulo;
+        lista[idx].categoria = categoria;
+        lista[idx].resumo = resumo;
+        lista[idx].corpoHtml = corpoHtml;
+        lista[idx].capa = capa;
+        lista[idx].status = status;
+        lista[idx].atualizadoEm = agora;
+      }
+    } else {
+      editandoNoticiaId = 'm_' + Date.now();
+      lista.push({
+        id: editandoNoticiaId,
+        titulo: titulo,
+        categoria: categoria,
+        resumo: resumo,
+        corpoHtml: corpoHtml,
+        capa: capa,
+        status: status,
+        criadoEm: agora,
+        atualizadoEm: agora
+      });
+    }
+
+    gravarNoticias(lista);
+    document.getElementById('noticia-titulo-view').textContent = 'Editando: ' + titulo;
+    alert(status === 'publicado' ? 'Notícia publicada com sucesso.' : 'Rascunho salvo com sucesso.');
+  }
+
+  function abrirNoticia(id){
+    var lista = carregarNoticias();
+    var registro = lista.find(function(m){ return m.id === id; });
+    if(!registro) return;
+    editandoNoticiaId = id;
+    document.getElementById('noticia-categoria').value = registro.categoria;
+    document.getElementById('noticia-titulo-input').value = registro.titulo;
+    document.getElementById('noticia-resumo').value = registro.resumo;
+    document.getElementById('noticia-corpo').innerHTML = registro.corpoHtml;
+    var img = document.getElementById('noticiaCapaImg');
+    if(registro.capa){
+      img.src = registro.capa;
+      img.style.display = 'block';
+      document.getElementById('noticiaCapaPlaceholder').style.display = 'none';
+      document.getElementById('noticiaBotaoTrocarCapa').style.display = 'flex';
+    } else {
+      img.src = '';
+      img.style.display = 'none';
+      document.getElementById('noticiaCapaPlaceholder').style.display = 'flex';
+      document.getElementById('noticiaBotaoTrocarCapa').style.display = 'none';
+    }
+    document.getElementById('noticia-titulo-view').textContent = 'Editando: ' + registro.titulo;
+    mostrarView('editor-noticia');
+  }
+
+  function duplicarNoticia(id){
+    var lista = carregarNoticias();
+    var registro = lista.find(function(m){ return m.id === id; });
+    if(!registro) return;
+    var copia = Object.assign({}, registro, {
+      id: 'm_' + Date.now(),
+      titulo: registro.titulo + ' (cópia)',
+      status: 'rascunho',
+      criadoEm: new Date().toISOString(),
+      atualizadoEm: new Date().toISOString()
+    });
+    lista.push(copia);
+    gravarNoticias(lista);
+    renderizarListaNoticias();
+  }
+
+  function excluirNoticia(id){
+    if(!confirm('Excluir esta notícia? Esta ação não pode ser desfeita.')) return;
+    var lista = carregarNoticias().filter(function(m){ return m.id !== id; });
+    gravarNoticias(lista);
+    renderizarListaNoticias();
+  }
+
+  function visualizarNoticia(id){
+    var lista = carregarNoticias();
+    var registro = lista.find(function(m){ return m.id === id; });
+    if(!registro) return;
+    var janela = window.open('', '_blank');
+    var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>' + registro.titulo + '</title>' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">' +
+      '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">' +
+      '<style>body{font-family:Inter,Arial,sans-serif;max-width:700px;margin:40px auto;padding:0 20px;color:#111;}' +
+      'h1{font-family:Poppins,sans-serif;color:#0e1e3f;margin-bottom:10px;}' +
+      '.categoria{display:inline-block;background:#eef1f7;color:#0e1e3f;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;margin-bottom:10px;}' +
+      '.resumo{color:#555;font-size:15px;margin-bottom:20px;}' +
+      'img{max-width:100%;border-radius:10px;margin-bottom:20px;}' +
+      '.corpo{font-size:15px;line-height:1.7;}</style></head><body>' +
+      '<span class="categoria">' + registro.categoria + '</span><h1>' + registro.titulo + '</h1>' +
+      (registro.resumo ? '<div class="resumo">' + registro.resumo + '</div>' : '') +
+      (registro.capa ? '<img src="' + registro.capa + '">' : '') +
+      '<div class="corpo">' + registro.corpoHtml + '</div></body></html>';
+    janela.document.write(html);
+    janela.document.close();
+  }
+
+  function renderizarListaNoticias(){
+    var lista = carregarNoticias().sort(function(a,b){ return new Date(b.atualizadoEm) - new Date(a.atualizadoEm); });
+    var busca = document.getElementById('noticia-filtro-busca').value.toLowerCase();
+    var statusFiltro = document.getElementById('noticia-filtro-status').value;
+
+    var filtrada = lista.filter(function(m){
+      var bateBusca = !busca || (m.titulo + ' ' + m.categoria).toLowerCase().indexOf(busca) > -1;
+      var bateStatus = !statusFiltro || m.status === statusFiltro;
+      return bateBusca && bateStatus;
+    });
+
+    var corpo = document.getElementById('tabela-noticias-corpo');
+    var vazio = document.getElementById('noticias-estado-vazio');
+    corpo.innerHTML = '';
+
+    if(filtrada.length === 0){
+      vazio.style.display = 'block';
+      return;
+    }
+    vazio.style.display = 'none';
+
+    filtrada.forEach(function(m){
+      var tr = document.createElement('tr');
+      var statusClasse = m.status === 'publicado' ? 'status-publicado' : 'status-rascunho';
+      var statusLabel = m.status === 'publicado' ? 'Publicado' : 'Rascunho';
+      tr.innerHTML =
+        '<td class="celula-titulo"><strong></strong><span></span></td>' +
+        '<td></td>' +
+        '<td><span class="status-badge ' + statusClasse + '">' + statusLabel + '</span></td>' +
+        '<td></td>' +
+        '<td class="celula-acoes">' +
+          '<button class="btn btn-secundario btn-mini">✏️ Editar</button>' +
+          '<button class="btn btn-secundario btn-mini">👁️ Ver</button>' +
+          '<button class="btn btn-secundario btn-mini">📄 Duplicar</button>' +
+          '<button class="btn btn-perigo btn-mini">🗑️ Excluir</button>' +
+        '</td>';
+
+      tr.querySelector('.celula-titulo strong').textContent = m.titulo;
+      tr.querySelector('.celula-titulo span').textContent = m.resumo || '';
+      tr.children[1].textContent = m.categoria;
+      tr.children[3].textContent = formatarData(m.atualizadoEm);
+
+      var botoes = tr.querySelectorAll('.celula-acoes button');
+      botoes[0].addEventListener('click', function(){ abrirNoticia(m.id); });
+      botoes[1].addEventListener('click', function(){ visualizarNoticia(m.id); });
+      botoes[2].addEventListener('click', function(){ duplicarNoticia(m.id); });
+      botoes[3].addEventListener('click', function(){ excluirNoticia(m.id); });
+
+      corpo.appendChild(tr);
+    });
+  }
+
+  // ===== INICIALIZAÇÃO =====
+  novoBoletim();
+  novaNoticia();
+</script>
+
+</body>
+</html>
