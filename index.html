@@ -950,7 +950,9 @@
             <div class="field-row">
               <div class="field">
                 <label>Categoria</label>
-                <select id="f-categoria" required></select>
+                <input type="text" id="f-categoria-busca" list="lista-categorias" required autocomplete="off" placeholder="Digite para buscar (ex: assalto, alagamento...)">
+                <datalist id="lista-categorias"></datalist>
+                <input type="hidden" id="f-categoria">
               </div>
               <div class="field">
                 <label>Data da notícia</label>
@@ -1519,9 +1521,21 @@
     const cor = catColor(id);
     return `<span class="cat-tag" style="background:${cor}22;color:${cor};${estilo}">${catLabel(id)}</span>`;
   }
-  document.getElementById('f-categoria').innerHTML = CATEGORIES
+  document.getElementById('lista-categorias').innerHTML = CATEGORIES
     .filter(c => c.id !== 'todos')
-    .map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+    .map(c => `<option value="${c.label}">`).join('');
+
+  // Campo de busca de categoria (Nova Notícia): o operador digita e o navegador
+  // sugere pelas opções da datalist; ao bater com um rótulo válido, guardamos o
+  // id correspondente no campo oculto f-categoria (é ele que o resto do código usa).
+  function setCategoriaCampo(id){
+    document.getElementById('f-categoria').value = id || '';
+    document.getElementById('f-categoria-busca').value = id ? catLabel(id) : '';
+  }
+  document.getElementById('f-categoria-busca').addEventListener('input', (e) => {
+    const encontrada = CATEGORIES.find(c => c.label.toLowerCase() === e.target.value.trim().toLowerCase());
+    document.getElementById('f-categoria').value = encontrada ? encontrada.id : '';
+  });
 
   /* Templates padronizados de informe: cada card na Home leva ao feed
      daquele template. O layout do informe (.informe-card) é o mesmo
@@ -2290,10 +2304,12 @@
     });
   }
 
+  let categoriasExpandidas = false; // controla se a lista extensa de categorias está aberta na sidebar
+
   async function renderSidebarCategories(){
     const all = await getArticles();
     const el = document.getElementById('sidebar-categories');
-    el.innerHTML = CATEGORIES.map(c => {
+    const itemHTML = (c) => {
       const count = c.id === 'todos' ? all.length : all.filter(a => a.categoria === c.id).length;
       return `
       <button class="side-item ${c.id===state.category?'active':''}" data-cat="${c.id}">
@@ -2301,14 +2317,31 @@
         <span class="label">${c.label}</span>
         <span class="count">${count}</span>
       </button>`;
-    }).join('');
-    el.querySelectorAll('.side-item').forEach(btn => {
+    };
+    // Categorias principais (com cor dedicada) ficam sempre visíveis; a lista
+    // extensa de tipos específicos fica colapsada atrás de "Ver mais".
+    const principais = CATEGORIES.filter(c => c.id === 'todos' || CATEGORIAS_COM_CSS.has(c.id));
+    const extras = CATEGORIES.filter(c => c.id !== 'todos' && !CATEGORIAS_COM_CSS.has(c.id));
+    const expandido = categoriasExpandidas || extras.some(c => c.id === state.category);
+    el.innerHTML = principais.map(itemHTML).join('') + (extras.length ? `
+      <div id="categorias-extras" ${expandido ? '' : 'hidden'}>${extras.map(itemHTML).join('')}</div>
+      <button type="button" class="side-item" id="toggle-categorias-extras">
+        <span class="sw" style="background:var(--text-dim)"></span>
+        <span class="label">${expandido ? 'Ver menos categorias' : 'Ver mais categorias'}</span>
+        <span class="count">${expandido ? '' : extras.length}</span>
+      </button>` : '');
+    el.querySelectorAll('.side-item[data-cat]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.category = btn.dataset.cat;
-        el.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', b===btn));
+        el.querySelectorAll('.side-item[data-cat]').forEach(b => b.classList.toggle('active', b===btn));
         renderAll();
         closeSidebarMobile();
       });
+    });
+    const toggleBtn = document.getElementById('toggle-categorias-extras');
+    if (toggleBtn) toggleBtn.addEventListener('click', () => {
+      categoriasExpandidas = !categoriasExpandidas;
+      renderSidebarCategories();
     });
   }
 
@@ -2470,7 +2503,7 @@
     document.getElementById('f-edit-id').value = art.id;
     document.getElementById('f-titulo').value = art.titulo;
     document.getElementById('f-link').value = art.link_original;
-    document.getElementById('f-categoria').value = art.categoria;
+    setCategoriaCampo(art.categoria);
     document.getElementById('f-cidade').value = art.cidade;
     document.getElementById('f-uf').value = art.uf;
     document.getElementById('f-data').value = art.data;
@@ -2497,7 +2530,7 @@
     pendingReviewSourceId = null;
     document.getElementById('f-titulo').value = art.titulo + ' (cópia)';
     document.getElementById('f-link').value = art.link_original;
-    document.getElementById('f-categoria').value = art.categoria;
+    setCategoriaCampo(art.categoria);
     document.getElementById('f-cidade').value = art.cidade;
     document.getElementById('f-uf').value = art.uf;
     document.getElementById('f-data').value = todayISO();
@@ -2523,7 +2556,7 @@
 
     document.getElementById('f-titulo').value = item.titulo;
     document.getElementById('f-link').value = item.link_original;
-    document.getElementById('f-categoria').value = item.categoria;
+    setCategoriaCampo(item.categoria);
     document.getElementById('f-cidade').value = item.cidade;
     document.getElementById('f-uf').value = item.uf;
     document.getElementById('f-data').value = item.data;
@@ -2546,6 +2579,10 @@
     const editId = document.getElementById('f-edit-id').value;
     if (!currentCoverFile && !currentCoverURL){
       showToast('Selecione uma imagem de capa');
+      return;
+    }
+    if (!CATEGORIES.some(c => c.id === document.getElementById('f-categoria').value)){
+      showToast('Escolha uma categoria válida na lista de sugestões');
       return;
     }
     const operadorNome = document.getElementById('f-operador-nome').value.trim();
