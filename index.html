@@ -213,6 +213,11 @@
   .cat-transito{background:var(--warn-soft);color:var(--warn);}
   .cat-operacao-policial{background:var(--info-soft);color:var(--info);}
   .cat-furto-roubo{background:var(--danger-soft);color:var(--danger);}
+  .cat-latrocinio{background:rgba(92,26,26,.12);color:#5C1A1A;}
+  .cat-assalto{background:rgba(194,102,11,.1);color:#C2660B;}
+  .cat-tiros{background:rgba(184,38,107,.1);color:#B8266B;}
+  .cat-roubo{background:rgba(14,124,134,.1);color:#0E7C86;}
+  .cat-apreensao{background:rgba(59,85,104,.12);color:#3B5568;}
   .cat-alerta-corporativo{background:var(--corp-soft);color:var(--corp);}
   .cat-manifestacao{background:var(--ok-soft);color:var(--ok);}
   .cat-outros{background:var(--bg-elevated);color:var(--text-muted);}
@@ -950,6 +955,11 @@
                   <option value="transito">Trânsito</option>
                   <option value="operacao-policial">Operação Policial</option>
                   <option value="furto-roubo">Furto / Roubo</option>
+                  <option value="latrocinio">Latrocínio</option>
+                  <option value="assalto">Assalto</option>
+                  <option value="tiros">Tiros</option>
+                  <option value="roubo">Roubo</option>
+                  <option value="apreensao">Apreensão</option>
                   <option value="alerta-corporativo">Alerta Corporativo</option>
                   <option value="manifestacao">Manifestação</option>
                   <option value="outros">Outros</option>
@@ -1450,6 +1460,11 @@
     { id:'transito', label:'Trânsito', color:'var(--warn)' },
     { id:'operacao-policial', label:'Operação Policial', color:'var(--info)' },
     { id:'furto-roubo', label:'Furto / Roubo', color:'#ff7c85' },
+    { id:'latrocinio', label:'Latrocínio', color:'#5C1A1A' },
+    { id:'assalto', label:'Assalto', color:'#C2660B' },
+    { id:'tiros', label:'Tiros', color:'#B8266B' },
+    { id:'roubo', label:'Roubo', color:'#0E7C86' },
+    { id:'apreensao', label:'Apreensão', color:'#3B5568' },
     { id:'alerta-corporativo', label:'Alerta Corporativo', color:'#b795ff' },
     { id:'manifestacao', label:'Manifestação', color:'var(--ok)' },
     { id:'outros', label:'Outros', color:'var(--text-dim)' },
@@ -2960,6 +2975,16 @@
   let boletimCapaFile = null, boletimCapaURL = '';
   let boletimMapaFile = null, boletimMapaURL = '';
   let boletimRodapeFile = null, boletimRodapeURL = '';
+
+  // Cola sempre como texto simples nos campos editáveis do boletim, para que o
+  // texto colado herde a fonte/estilo do template em vez de trazer a formatação
+  // de origem (Word, e-mail, site de notícia etc.).
+  document.getElementById('informe-boletim-canvas').addEventListener('paste', (e) => {
+    if (!e.target.closest('.editavel')) return;
+    e.preventDefault();
+    const texto = (e.clipboardData || window.clipboardData).getData('text/plain');
+    document.execCommand('insertText', false, texto);
+  });
 
   function ligarBotoesImagemBoletim(){
     const canvas = document.getElementById('informe-boletim-canvas');
