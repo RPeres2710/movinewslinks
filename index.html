@@ -950,20 +950,7 @@
             <div class="field-row">
               <div class="field">
                 <label>Categoria</label>
-                <select id="f-categoria" required>
-                  <option value="seguranca">Segurança</option>
-                  <option value="transito">Trânsito</option>
-                  <option value="operacao-policial">Operação Policial</option>
-                  <option value="furto-roubo">Furto / Roubo</option>
-                  <option value="latrocinio">Latrocínio</option>
-                  <option value="assalto">Assalto</option>
-                  <option value="tiros">Tiros</option>
-                  <option value="roubo">Roubo</option>
-                  <option value="apreensao">Apreensão</option>
-                  <option value="alerta-corporativo">Alerta Corporativo</option>
-                  <option value="manifestacao">Manifestação</option>
-                  <option value="outros">Outros</option>
-                </select>
+                <select id="f-categoria" required></select>
               </div>
               <div class="field">
                 <label>Data da notícia</label>
@@ -1467,8 +1454,74 @@
     { id:'apreensao', label:'Apreensão', color:'#3B5568' },
     { id:'alerta-corporativo', label:'Alerta Corporativo', color:'#b795ff' },
     { id:'manifestacao', label:'Manifestação', color:'var(--ok)' },
+    { id:'barricadas', label:'Barricadas', color:'#7A2A34' },
+    { id:'briga-de-torcida', label:'Briga de Torcida', color:'#1E9762' },
+    { id:'alagamento', label:'Alagamento', color:'#B87D14' },
+    { id:'bloqueio-de-vias', label:'Bloqueio de Vias', color:'#3159C9' },
+    { id:'manifestacao-moradores', label:'Manifestação de Moradores', color:'#C22A38' },
+    { id:'alerta-defesa-civil', label:'Alerta da Defesa Civil', color:'#6B3FCF' },
+    { id:'confronto-faccoes', label:'Confronto entre Facções Criminosas', color:'#0E7C86' },
+    { id:'operacao-pm', label:'Operação da Polícia Militar', color:'#C2660B' },
+    { id:'operacao-pc', label:'Operação da Polícia Civil', color:'#B8266B' },
+    { id:'ocupacao-policial-provisoria', label:'Ocupação Policial Provisória', color:'#5C1A1A' },
+    { id:'bolsao-dagua-previsao', label:'Provável bolsão d\'água (API de Meteorologia)', color:'#3B5568' },
+    { id:'interdicao', label:'Interdição', color:'#8A8F1F' },
+    { id:'incendio-veiculo', label:'Incêndio em Veículo', color:'#4B6FB0' },
+    { id:'atropelamento', label:'Atropelamento', color:'#7A2A34' },
+    { id:'atentado-forca-policial', label:'Atentado Contra Força Policial', color:'#1E9762' },
+    { id:'queda-de-arvore', label:'Queda de Árvore', color:'#B87D14' },
+    { id:'acidente', label:'Acidente', color:'#3159C9' },
+    { id:'animal-na-pista', label:'Animal na Pista', color:'#C22A38' },
+    { id:'transito-lento', label:'Trânsito lento', color:'#6B3FCF' },
+    { id:'engavetamento', label:'Engavetamento', color:'#0E7C86' },
+    { id:'obra', label:'Obra', color:'#C2660B' },
+    { id:'veiculo-enguicado', label:'Veículo Enguiçado', color:'#B8266B' },
+    { id:'estagio-de-atencao', label:'Estágio de Atenção', color:'#5C1A1A' },
+    { id:'interrupcao-servicos-publicos', label:'Interrupção nos serviços públicos', color:'#3B5568' },
+    { id:'previsao-eventos-diversos', label:'Previsão de eventos diversos', color:'#8A8F1F' },
+    { id:'assalto-com-disparos', label:'Assalto com disparos', color:'#4B6FB0' },
+    { id:'ato-de-vandalismo', label:'Ato de Vandalismo', color:'#7A2A34' },
+    { id:'risco-iminente', label:'Risco Iminente', color:'#1E9762' },
+    { id:'suspeita-de-bomba', label:'Suspeita de Bomba', color:'#B87D14' },
+    { id:'troca-de-tiros', label:'Troca de Tiros', color:'#3159C9' },
+    { id:'explosao-de-bueiro', label:'Explosão de bueiro', color:'#C22A38' },
+    { id:'poda-de-arvore', label:'Poda de Árvore', color:'#6B3FCF' },
+    { id:'previsao-interdicao-via', label:'Previsão de Interdição de Via', color:'#0E7C86' },
+    { id:'blitz-policial', label:'Blitz Policial', color:'#C2660B' },
+    { id:'blitz-lei-seca', label:'Blitz Lei Seca', color:'#B8266B' },
+    { id:'acidente-vitimas-fatais', label:'Acidente com vítimas fatais', color:'#5C1A1A' },
+    { id:'buraco-na-rua', label:'Buraco na Rua', color:'#3B5568' },
+    { id:'incendio-grandes-proporcoes', label:'Incêndio de Grandes Proporções', color:'#8A8F1F' },
+    { id:'manifestacao-vandalismo', label:'Manifestação com Atos de Vandalismo', color:'#4B6FB0' },
+    { id:'bloco-carnavalesco', label:'Bloco Carnavalesco', color:'#7A2A34' },
+    { id:'ocorrencia-policial', label:'Ocorrência Policial', color:'#1E9762' },
+    { id:'acidente-grandes-proporcoes', label:'Acidente de Grandes Proporções', color:'#B87D14' },
+    { id:'incendio-edificacao', label:'Incêndio em Edificação', color:'#3159C9' },
+    { id:'bolsao-dagua', label:'Bolsão D\'Água', color:'#C22A38' },
+    { id:'acidente-com-vitimas', label:'Acidente com vítimas', color:'#6B3FCF' },
+    { id:'manifestacao-em-curso', label:'Manifestação popular em curso', color:'#0E7C86' },
+    { id:'deslizamento', label:'Deslizamento', color:'#C2660B' },
+    { id:'roubos-em-serie', label:'Roubos em série (Arrastão)', color:'#B8266B' },
+    { id:'assalto-a-banco', label:'Assalto a Banco', color:'#5C1A1A' },
+    { id:'previsao-manifestacao', label:'Previsão de manifestação popular', color:'#3B5568' },
+    { id:'aeroporto-fechado', label:'Aeroporto fechado para pousos e decolagens', color:'#8A8F1F' },
+    { id:'festas-comemoracoes', label:'Festas e Comemorações', color:'#4B6FB0' },
     { id:'outros', label:'Outros', color:'var(--text-dim)' },
   ];
+
+  // Categorias com cor fixa em CSS (.cat-<id>); as demais (lista extensa acima)
+  // usam a cor definida no array CATEGORIES, aplicada inline em catBadgeHTML().
+  const CATEGORIAS_COM_CSS = new Set(['seguranca','transito','operacao-policial','furto-roubo','latrocinio','assalto','tiros','roubo','apreensao','alerta-corporativo','manifestacao','outros']);
+  const catColor = (id) => (CATEGORIES.find(c=>c.id===id)||{}).color || 'var(--text-dim)';
+  function catBadgeHTML(id, extraStyle){
+    const estilo = extraStyle || '';
+    if (CATEGORIAS_COM_CSS.has(id)) return `<span class="cat-tag cat-${id}" style="${estilo}">${catLabel(id)}</span>`;
+    const cor = catColor(id);
+    return `<span class="cat-tag" style="background:${cor}22;color:${cor};${estilo}">${catLabel(id)}</span>`;
+  }
+  document.getElementById('f-categoria').innerHTML = CATEGORIES
+    .filter(c => c.id !== 'todos')
+    .map(c => `<option value="${c.id}">${c.label}</option>`).join('');
 
   /* Templates padronizados de informe: cada card na Home leva ao feed
      daquele template. O layout do informe (.informe-card) é o mesmo
@@ -1599,7 +1652,7 @@
         ${isToday ? '<span class="today-flag">HOJE</span>' : ''}
       </div>
       <div class="card-body">
-        <span class="cat-tag cat-${a.categoria}">${catLabel(a.categoria)}</span>
+        ${catBadgeHTML(a.categoria)}
         <div class="card-title">${a.titulo}</div>
         <div class="card-excerpt">${a.resumo}</div>
         <div class="card-foot">
