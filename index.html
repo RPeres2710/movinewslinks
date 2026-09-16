@@ -232,11 +232,7 @@
     transition:transform .18s ease, box-shadow .18s ease;
   }
   .template-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(14,30,63,.18);}
-  .template-card .tpl-icon{
-    position:absolute;right:-10px;bottom:-14px;opacity:.16;
-    width:110px;height:110px;
-  }
-  .template-card .tpl-icon svg{width:100%;height:100%;}
+  .template-card .tpl-logo{width:78px;height:28px;object-fit:contain;opacity:.95;flex:none;}
   .template-card .tpl-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1;}
   .template-card .tpl-icon-small{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex:none;}
   .template-card .tpl-icon-small svg{width:18px;height:18px;}
@@ -282,6 +278,16 @@
   .informe-reco .lbl{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:5px;}
   .informe-reco .txt{font-size:13.5px;line-height:1.6;color:var(--text);}
   .informe-foot{padding:11px 20px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+  .informe-day{margin-bottom:22px;}
+  .informe-day-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--navy);}
+  .informe-day-head::after{content:'';height:1px;flex:1;background:var(--border);}
+  .informe-mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;}
+  .informe-mini-card{display:flex;align-items:stretch;min-height:92px;padding:0;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);color:var(--text);text-align:left;overflow:hidden;cursor:pointer;box-shadow:0 2px 8px rgba(14,30,63,.04);transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease;}
+  .informe-mini-card:hover{transform:translateY(-2px);border-color:var(--steel);box-shadow:0 8px 18px rgba(14,30,63,.1);}
+  .informe-mini-thumb{width:88px;flex:none;object-fit:cover;background:var(--bg-elevated);}
+  .informe-mini-content{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px 13px;min-width:0;}
+  .informe-mini-title{font-family:var(--font-display);font-size:16px;font-weight:600;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .informe-mini-summary{font-size:11.5px;line-height:1.35;color:var(--text-muted);display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 
   .img-multi-preview{display:flex;flex-wrap:wrap;gap:8px;}
   .img-multi-item{position:relative;width:76px;height:76px;border-radius:9px;overflow:hidden;border:1px solid var(--border);flex:none;}
@@ -1891,17 +1897,17 @@
     const informes = await getInformes();
     const covers = await getTemplateImages();
     const el = document.getElementById('template-grid');
+    const logoUrl = 'logo white transparent.png';
     el.innerHTML = TEMPLATES.map(t => {
       const count = informes.filter(i => i.tipo === t.id).length;
-      const cover = covers[t.id];
+      const cover = t.id === 'operacoes-rj' ? 'operacao policial img.png' : covers[t.id];
       const bg = cover
-        ? `linear-gradient(135deg, ${t.color1}CC, ${t.color2}CC), url('${cover}') center/cover`
+        ? `url('${cover}') center/cover`
         : `linear-gradient(135deg, ${t.color1}, ${t.color2})`;
       return `
       <button class="template-card" data-tipo="${t.id}" style="background:${bg};">
-        <div class="tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.4">${t.icon}</svg></div>
         <div class="tpl-top">
-          <span class="tpl-icon-small"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">${t.icon}</svg></span>
+          <img class="tpl-logo" src="${logoUrl}" alt="">
           <span class="tpl-count">${count}</span>
         </div>
         <div>
@@ -1956,6 +1962,7 @@
   }
 
   let informeTitlesById = {};
+  let activeInformeDetail = false;
   let currentShareId = null;
 
   function bindInformeShareButtons(container){
@@ -1981,6 +1988,18 @@
     document.getElementById('share-popover').hidden = true;
     currentShareId = null;
   }
+
+  function informeMiniCardHTML(item){
+    const thumb = item.imagens && item.imagens.length ? item.imagens[0] : item.imagem_meio;
+    return `
+      <button type="button" class="informe-mini-card" data-id="${item.id}">
+        ${thumb ? `<img class="informe-mini-thumb" src="${thumb}" alt="">` : ''}
+        <span class="informe-mini-content">
+          <span class="informe-mini-title">${item.titulo}</span>
+          ${item.resumo ? `<span class="informe-mini-summary">${item.resumo}</span>` : ''}
+        </span>
+      </button>`;
+  }
   function fallbackCopyLink(text, done){
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -1996,12 +2015,41 @@
   async function renderInformesFeed(tipoId){
     const t = templateById(tipoId);
     const all = (await getInformes()).filter(i => i.tipo === tipoId);
+    activeInformeDetail = false;
     all.forEach(i => { informeTitlesById[i.id] = i.titulo; });
     document.getElementById('informes-title').textContent = t.label;
     document.getElementById('count-informes').textContent = `${all.length} informe${all.length===1?'':'s'}`;
     const el = document.getElementById('informes-feed');
-    el.innerHTML = all.length ? all.map(informeCardHTML).join('') : `<div class="empty-state">Nenhum informe publicado neste template ainda.</div>`;
+    if (!all.length){
+      el.innerHTML = `<div class="empty-state">Nenhum informe publicado neste template ainda.</div>`;
+      return;
+    }
+    const groups = {};
+    all.slice().sort((a,b) => b.data.localeCompare(a.data)).forEach(item => {
+      (groups[item.data] ||= []).push(item);
+    });
+    el.innerHTML = Object.keys(groups).sort((a,b) => b.localeCompare(a)).map(data => `
+      <section class="informe-day">
+        <div class="informe-day-head">${fmtDatePt(data)}</div>
+        <div class="informe-mini-grid">${groups[data].map(informeMiniCardHTML).join('')}</div>
+      </section>`).join('');
+    el.querySelectorAll('.informe-mini-card').forEach(card => {
+      card.addEventListener('click', () => openInformeDetail(card.dataset.id));
+    });
+  }
+
+  async function openInformeDetail(id){
+    const item = await getInformeById(id);
+    if (!item) return;
+    activeInformeDetail = true;
+    informeTitlesById[item.id] = item.titulo;
+    const t = templateById(item.tipo);
+    document.getElementById('informes-title').textContent = item.titulo;
+    document.getElementById('count-informes').textContent = t.label;
+    const el = document.getElementById('informes-feed');
+    el.innerHTML = informeCardHTML(item);
     bindInformeShareButtons(el);
+    window.scrollTo({top:0, behavior:'smooth'});
   }
 
   function openInformesView(tipoId){
@@ -2018,6 +2066,7 @@
       showToast('Boletim não encontrado');
       return;
     }
+    activeInformeDetail = true;
     informeTitlesById[item.id] = item.titulo;
     const t = templateById(item.tipo);
     document.getElementById('informes-title').textContent = item.titulo;
@@ -3594,7 +3643,13 @@
     }
   });
 
-  document.getElementById('informes-back').addEventListener('click', () => switchView('home'));
+  document.getElementById('informes-back').addEventListener('click', () => {
+    if (activeInformeDetail){
+      renderInformesFeed(state.informeTipo);
+      return;
+    }
+    switchView('home');
+  });
 
   /* ---- Aparência: carrossel do topo (admin) ---- */
   let currentHeroFile = null;
