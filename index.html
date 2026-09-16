@@ -506,6 +506,24 @@
   .metric-bar-track{height:6px;border-radius:999px;background:var(--border);overflow:hidden;}
   .metric-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg, var(--accent-2), var(--accent));}
 
+  /* ---- Dashboard de métricas (cidade/bairro/categoria — barras + rosca) ---- */
+  .dash-card{background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
+  .dash-card-title{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;font-family:var(--font-mono);}
+  .dash-body{display:flex;gap:22px;flex-wrap:wrap;align-items:center;}
+  .dash-bars{flex:1 1 220px;min-width:200px;display:flex;flex-direction:column;gap:7px;}
+  .dash-bar-row{display:flex;align-items:center;gap:8px;}
+  .dash-bar-label{width:104px;flex:none;font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .dash-bar-track{flex:1;height:12px;border-radius:4px;background:var(--border);overflow:hidden;}
+  .dash-bar-fill{height:100%;border-radius:4px;}
+  .dash-bar-value{width:22px;flex:none;text-align:right;font-family:var(--font-mono);font-size:10.5px;color:var(--text-dim);}
+  .dash-donut-wrap{display:flex;align-items:center;gap:14px;flex:none;}
+  .dash-donut{width:104px;height:104px;border-radius:50%;position:relative;flex:none;}
+  .dash-donut::after{content:"";position:absolute;inset:26%;background:var(--bg-panel);border-radius:50%;}
+  .dash-legend{display:flex;flex-direction:column;gap:5px;}
+  .dash-legend-item{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-dim);white-space:nowrap;}
+  .dash-legend-dot{width:8px;height:8px;border-radius:2px;flex:none;}
+  .dash-secao-titulo{font-size:12.5px;font-weight:700;color:var(--accent);margin:18px 0 8px;font-family:var(--font-display);}
+
   .fab-editor{
     display:none;position:fixed;right:20px;bottom:20px;z-index:80;
     background:var(--accent);color:#fff;border:none;border-radius:999px;
@@ -970,6 +988,10 @@
               </div>
             </div>
             <div class="field">
+              <label>Bairro</label>
+              <input type="text" id="f-bairro" placeholder="Ex: Copacabana">
+            </div>
+            <div class="field">
               <label>Resumo</label>
               <textarea id="f-resumo" rows="3" required placeholder="Breve resumo da notícia..."></textarea>
             </div>
@@ -1035,6 +1057,16 @@
             <div class="field">
               <label>Data</label>
               <input type="date" id="i-data" required>
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Cidade</label>
+                <input type="text" id="i-cidade" placeholder="Ex: Rio de Janeiro">
+              </div>
+              <div class="field">
+                <label>Bairro</label>
+                <input type="text" id="i-bairro" placeholder="Ex: Copacabana">
+              </div>
             </div>
             <div id="informe-campos-genericos">
               <div class="field">
@@ -1159,6 +1191,22 @@
             </div>
             <div id="metricas-list" style="display:flex;flex-direction:column;gap:10px;"></div>
             <div class="form-note" id="metricas-total" style="margin-top:6px;"></div>
+
+            <div class="field" style="margin-top:16px;">
+              <label>Boletins por operador</label>
+            </div>
+            <div id="metricas-boletim-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <div class="form-note" id="metricas-boletim-total" style="margin-top:6px;"></div>
+
+            <div class="dash-secao-titulo">Dashboard — Notícias</div>
+            <div id="dash-noticias-categoria"></div>
+            <div id="dash-noticias-cidade"></div>
+            <div id="dash-noticias-bairro"></div>
+
+            <div class="dash-secao-titulo">Dashboard — Boletins</div>
+            <div id="dash-boletins-tipo"></div>
+            <div id="dash-boletins-cidade"></div>
+            <div id="dash-boletins-bairro"></div>
           </div>
 
           <!-- APARÊNCIA (admin): carrossel do topo + capas dos templates -->
@@ -2144,34 +2192,23 @@
     }));
   }
 
-  async function renderMetrics(){
-    const deInput = document.getElementById('met-de');
-    const ateInput = document.getElementById('met-ate');
-    if (!deInput.value) deInput.value = daysAgo(30);
-    if (!ateInput.value) ateInput.value = todayISO();
-    const de = deInput.value;
-    const ate = ateInput.value;
-
-    const arts = await getArticles();
-    const noRange = arts.filter(a => {
-      const d = (a.criado_em || a.data || '').slice(0, 10);
-      return d >= de && d <= ate;
-    });
-
+  // Conta compartilhada do CRI: subdivide por nome de quem inseriu.
+  // Demais contas (ex: admin) contam como uma linha única por e-mail.
+  function contarPorOperador(lista){
     const counts = {};
-    noRange.forEach(a => {
-      const op = a.operador || 'desconhecido';
-      // Conta compartilhada do CRI: subdivide por nome de quem inseriu.
-      // Demais contas (ex: admin) contam como uma linha única por e-mail.
+    lista.forEach(item => {
+      const op = item.operador || 'desconhecido';
       const key = op.toLowerCase() === 'cri24@movisafe-amlat.com'
-        ? `CRI · ${a.operador_nome || 'sem identificação'}`
+        ? `CRI · ${item.operador_nome || 'sem identificação'}`
         : op;
       counts[key] = (counts[key] || 0) + 1;
     });
-    const ranking = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    const max = ranking.length ? ranking[0][1] : 0;
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  }
 
-    const el = document.getElementById('metricas-list');
+  function renderRankingList(elId, ranking){
+    const max = ranking.length ? ranking[0][1] : 0;
+    const el = document.getElementById(elId);
     el.innerHTML = ranking.length ? ranking.map(([label, count]) => `
       <div class="metric-row">
         <div class="metric-row-top">
@@ -2180,9 +2217,120 @@
         </div>
         <div class="metric-bar-track"><div class="metric-bar-fill" style="width:${max ? (count/max*100) : 0}%"></div></div>
       </div>
-    `).join('') : `<div class="form-note">Nenhuma matéria inserida no período selecionado.</div>`;
+    `).join('') : `<div class="form-note">Nada publicado no período selecionado.</div>`;
+  }
 
-    document.getElementById('metricas-total').textContent = `Total no período: ${noRange.length} matéria${noRange.length===1?'':'s'} · ${ranking.length} operador${ranking.length===1?'':'es'}`;
+  // Agrupa por texto livre (cidade/bairro), ignorando maiúsc./minúsc. na
+  // contagem mas preservando a grafia da primeira ocorrência para exibir.
+  // Mantém as `n` maiores e soma o resto em "Outros".
+  function agruparTopN(itens, campo, n){
+    const grupos = {};
+    itens.forEach(item => {
+      const bruto = (item[campo] || '').trim();
+      if (!bruto) return;
+      const chave = bruto.toLowerCase();
+      if (!grupos[chave]) grupos[chave] = { label: bruto, count: 0 };
+      grupos[chave].count++;
+    });
+    const ranking = Object.values(grupos).sort((a, b) => b.count - a.count);
+    const top = ranking.slice(0, n).map(g => [g.label, g.count]);
+    const restoTotal = ranking.slice(n).reduce((s, g) => s + g.count, 0);
+    if (restoTotal > 0) top.push(['Outros', restoTotal]);
+    return top;
+  }
+
+  // Agrupa por um campo de id fixo (categoria/tipo), convertendo pro rótulo
+  // legível via `rotulador`. Mantém as `n` maiores e soma o resto em "Outros".
+  function contarComRotulo(itens, campo, rotulador, n){
+    const contagem = {};
+    itens.forEach(item => {
+      const v = item[campo];
+      if (!v) return;
+      contagem[v] = (contagem[v] || 0) + 1;
+    });
+    const ranking = Object.entries(contagem).sort((a, b) => b[1] - a[1]);
+    const top = ranking.slice(0, n).map(([id, count]) => [rotulador(id), count]);
+    const restoTotal = ranking.slice(n).reduce((s, [, c]) => s + c, 0);
+    if (restoTotal > 0) top.push(['Outros', restoTotal]);
+    return top;
+  }
+
+  const DASH_CORES = ['#7A2A34', '#3159C9', '#B87D14', '#1E9762', '#6B3FCF', '#C22A38'];
+  const DASH_COR_OUTROS = '#8B93A3';
+
+  // Renderiza um card com barras horizontais + rosca a partir de pares [label, count].
+  function renderDashCard(elId, titulo, dados){
+    const el = document.getElementById(elId);
+    const total = dados.reduce((s, [, c]) => s + c, 0);
+    if (!dados.length || !total){
+      el.innerHTML = `<div class="dash-card"><div class="dash-card-title">${titulo}</div><div class="form-note">Sem dados no período.</div></div>`;
+      return;
+    }
+    const max = Math.max(...dados.map(([, c]) => c));
+    const cores = dados.map(([label], i) => label === 'Outros' ? DASH_COR_OUTROS : DASH_CORES[i % DASH_CORES.length]);
+
+    const barrasHTML = dados.map(([label, count], i) => `
+      <div class="dash-bar-row" title="${label}: ${count}">
+        <span class="dash-bar-label">${label}</span>
+        <span class="dash-bar-track"><span class="dash-bar-fill" style="width:${(count/max*100)}%;background:${cores[i]};"></span></span>
+        <span class="dash-bar-value">${count}</span>
+      </div>`).join('');
+
+    let acumulado = 0;
+    const stops = dados.map(([, count], i) => {
+      const inicio = acumulado / total * 100;
+      acumulado += count;
+      const fim = acumulado / total * 100;
+      return `${cores[i]} ${inicio}% ${fim}%`;
+    }).join(', ');
+
+    const legendaHTML = dados.map(([label, count], i) => `
+      <div class="dash-legend-item"><span class="dash-legend-dot" style="background:${cores[i]};"></span>${label} · ${Math.round(count/total*100)}%</div>`).join('');
+
+    el.innerHTML = `
+      <div class="dash-card">
+        <div class="dash-card-title">${titulo}</div>
+        <div class="dash-body">
+          <div class="dash-bars">${barrasHTML}</div>
+          <div class="dash-donut-wrap">
+            <div class="dash-donut" style="background:conic-gradient(${stops});"></div>
+            <div class="dash-legend">${legendaHTML}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function renderMetrics(){
+    const deInput = document.getElementById('met-de');
+    const ateInput = document.getElementById('met-ate');
+    if (!deInput.value) deInput.value = daysAgo(30);
+    if (!ateInput.value) ateInput.value = todayISO();
+    const de = deInput.value;
+    const ate = ateInput.value;
+    const noPeriodo = (item) => {
+      const d = (item.criado_em || item.data || '').slice(0, 10);
+      return d >= de && d <= ate;
+    };
+
+    const arts = await getArticles();
+    const noRange = arts.filter(noPeriodo);
+    const rankingArts = contarPorOperador(noRange);
+    renderRankingList('metricas-list', rankingArts);
+    document.getElementById('metricas-total').textContent = `Total no período: ${noRange.length} matéria${noRange.length===1?'':'s'} · ${rankingArts.length} operador${rankingArts.length===1?'':'es'}`;
+
+    const informesTodos = await getInformes();
+    const informesRange = informesTodos.filter(noPeriodo);
+    const rankingInformes = contarPorOperador(informesRange);
+    renderRankingList('metricas-boletim-list', rankingInformes);
+    document.getElementById('metricas-boletim-total').textContent = `Total no período: ${informesRange.length} boletim${informesRange.length===1?'':'ns'} · ${rankingInformes.length} operador${rankingInformes.length===1?'':'es'}`;
+
+    renderDashCard('dash-noticias-categoria', 'Notícias por categoria', contarComRotulo(noRange, 'categoria', catLabel, 6));
+    renderDashCard('dash-noticias-cidade', 'Notícias por cidade', agruparTopN(noRange, 'cidade', 6));
+    renderDashCard('dash-noticias-bairro', 'Notícias por bairro', agruparTopN(noRange, 'bairro', 6));
+
+    renderDashCard('dash-boletins-tipo', 'Boletins por template', contarComRotulo(informesRange, 'tipo', id => (templateById(id)||{}).label || id, 6));
+    renderDashCard('dash-boletins-cidade', 'Boletins por cidade', agruparTopN(informesRange, 'cidade', 6));
+    renderDashCard('dash-boletins-bairro', 'Boletins por bairro', agruparTopN(informesRange, 'bairro', 6));
   }
 
   /* ================================================================
@@ -2506,6 +2654,7 @@
     setCategoriaCampo(art.categoria);
     document.getElementById('f-cidade').value = art.cidade;
     document.getElementById('f-uf').value = art.uf;
+    document.getElementById('f-bairro').value = art.bairro || '';
     document.getElementById('f-data').value = art.data;
     document.getElementById('f-resumo').value = art.resumo;
     document.getElementById('f-destaque').checked = !!art.destaque;
@@ -2533,6 +2682,7 @@
     setCategoriaCampo(art.categoria);
     document.getElementById('f-cidade').value = art.cidade;
     document.getElementById('f-uf').value = art.uf;
+    document.getElementById('f-bairro').value = art.bairro || '';
     document.getElementById('f-data').value = todayISO();
     document.getElementById('f-resumo').value = art.resumo;
     document.getElementById('f-destaque').checked = false;
@@ -2559,6 +2709,7 @@
     setCategoriaCampo(item.categoria);
     document.getElementById('f-cidade').value = item.cidade;
     document.getElementById('f-uf').value = item.uf;
+    document.getElementById('f-bairro').value = item.bairro || '';
     document.getElementById('f-data').value = item.data;
     document.getElementById('f-resumo').value = item.resumo;
     document.getElementById('edit-mode-banner').textContent = 'Revisando candidata minerada — confirme os dados e escolha a capa antes de publicar';
@@ -2612,6 +2763,7 @@
       categoria: document.getElementById('f-categoria').value,
       cidade: document.getElementById('f-cidade').value,
       uf: document.getElementById('f-uf').value.toUpperCase(),
+      bairro: document.getElementById('f-bairro').value || null,
       data: document.getElementById('f-data').value,
       resumo: document.getElementById('f-resumo').value,
       destaque: document.getElementById('f-destaque').checked,
@@ -3276,6 +3428,8 @@
     document.getElementById('i-tipo').value = item.tipo;
     document.getElementById('i-titulo').value = item.titulo + ' (cópia)';
     document.getElementById('i-data').value = todayISO();
+    document.getElementById('i-cidade').value = item.cidade || '';
+    document.getElementById('i-bairro').value = item.bairro || '';
     document.getElementById('i-resumo').value = item.resumo || '';
     document.getElementById('i-corpo').value = item.corpo || '';
     document.getElementById('i-destaque').value = item.destaque || '';
@@ -3305,6 +3459,8 @@
     document.getElementById('i-tipo').value = item.tipo;
     document.getElementById('i-titulo').value = item.titulo;
     document.getElementById('i-data').value = item.data;
+    document.getElementById('i-cidade').value = item.cidade || '';
+    document.getElementById('i-bairro').value = item.bairro || '';
     document.getElementById('i-resumo').value = item.resumo || '';
     document.getElementById('i-corpo').value = item.corpo || '';
     document.getElementById('i-destaque').value = item.destaque || '';
@@ -3363,6 +3519,8 @@
           tipo,
           titulo: document.getElementById('i-titulo').value,
           data: document.getElementById('i-data').value,
+          cidade: document.getElementById('i-cidade').value || null,
+          bairro: document.getElementById('i-bairro').value || null,
           conteudo_html: boletimEl.outerHTML,
           resumo: null,
           corpo: '',
@@ -3382,6 +3540,8 @@
           tipo,
           titulo: document.getElementById('i-titulo').value,
           data: document.getElementById('i-data').value,
+          cidade: document.getElementById('i-cidade').value || null,
+          bairro: document.getElementById('i-bairro').value || null,
           resumo: document.getElementById('i-resumo').value,
           corpo: document.getElementById('i-corpo').value,
           destaque: document.getElementById('i-destaque').value || null,
