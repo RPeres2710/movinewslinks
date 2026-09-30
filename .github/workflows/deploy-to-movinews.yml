@@ -1,0 +1,52 @@
+name: Deploy to MOVINEWS (live site)
+
+# Este repositório (movinewslinks) é onde o painel é desenvolvido/versionado.
+# O site ao vivo em https://rperes2710.github.io/MOVINEWS/ é servido por um
+# repositório GitHub Pages separado e sem histórico relacionado
+# (RPeres2710/MOVINEWS). Este workflow espelha o index.html (e os PNGs da
+# raiz) para lá a cada push no main, sem mexer nos demais arquivos que só
+# existem no MOVINEWS (painel.html, template-operacao-policial.html, backups).
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - '*.png'
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout movinewslinks
+        uses: actions/checkout@v4
+        with:
+          path: source
+
+      - name: Checkout MOVINEWS
+        uses: actions/checkout@v4
+        with:
+          repository: RPeres2710/MOVINEWS
+          token: ${{ secrets.MOVINEWS_DEPLOY_TOKEN }}
+          path: target
+
+      - name: Sync index.html e imagens
+        run: |
+          cp source/index.html target/index.html
+          for f in source/*.png; do
+            [ -e "$f" ] || continue
+            cp "$f" "target/$(basename "$f")"
+          done
+
+      - name: Commit e push se houver mudança
+        run: |
+          cd target
+          git config user.name "movinews-deploy-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nada para publicar."
+            exit 0
+          fi
+          git commit -m "Auto-deploy: sincroniza index.html a partir de movinewslinks@${GITHUB_SHA}"
+          git push
