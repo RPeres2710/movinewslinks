@@ -648,6 +648,15 @@
   .share-opt svg{flex:none;color:var(--text-dim);}
   .share-opt:hover{background:var(--bg-elevated);}
 
+  /* ---- Envio do boletim por e-mail (abre Outlook/Gmail já preenchido) ---- */
+  .email-modal{position:fixed;inset:0;z-index:220;background:rgba(14,30,63,.45);display:flex;align-items:center;justify-content:center;padding:16px;}
+  .email-modal[hidden]{display:none;}
+  .email-modal-box{background:#fff;border-radius:14px;width:100%;max-width:420px;padding:20px;box-shadow:0 20px 50px rgba(14,30,63,.25);display:flex;flex-direction:column;gap:12px;max-height:90vh;overflow:auto;}
+  .email-modal-box h3{margin:0;font-size:16px;color:var(--navy);}
+  .email-modal-box .form-note{margin:0;}
+  .email-modal-actions{display:flex;flex-direction:column;gap:8px;}
+  .email-modal-actions .submit-btn{margin:0;}
+
   /* ---- Link de boletim único (?informe=ID): esconde a plataforma, mostra só o boletim ---- */
   body.boletim-unico .main-header,
   body.boletim-unico .hero-carousel,
@@ -1034,6 +1043,7 @@
           <button class="drawer-tab" data-pane="pane-manif">Nova Manifestação</button>
           <button class="drawer-tab" data-pane="pane-informe">Boletim</button>
           <button class="drawer-tab" data-pane="pane-gerenciar">Gerenciar</button>
+          <button class="drawer-tab" data-pane="pane-emails">E-mails</button>
           <button class="drawer-tab admin-only" data-pane="pane-validacao" hidden>Validação</button>
           <button class="drawer-tab admin-only" data-pane="pane-clientes" hidden>Clientes</button>
           <button class="drawer-tab admin-only" data-pane="pane-metricas" hidden>Métricas</button>
@@ -1236,6 +1246,26 @@
             </div>
           </div>
 
+          <!-- E-MAILS (destinatários dos boletins) -->
+          <div class="drawer-pane" id="pane-emails">
+            <form id="form-email" style="display:flex;flex-direction:column;gap:14px;">
+              <div class="field">
+                <label>Adicionar e-mail</label>
+                <input type="email" id="e-email" required placeholder="nome@empresa.com.br">
+              </div>
+              <button type="submit" class="submit-btn">Salvar e-mail</button>
+            </form>
+            <div class="field" style="margin-top:10px;">
+              <label>Importar vários (planilha)</label>
+              <input type="file" id="e-planilha" accept=".xlsx,.xls,.csv,.txt">
+              <div class="form-note">Excel (.xlsx/.xls), CSV ou TXT. Todos os e-mails encontrados em qualquer coluna são importados; repetidos são ignorados.</div>
+            </div>
+            <div class="field" style="margin-top:18px;">
+              <label>E-mails cadastrados <span id="emails-count"></span></label>
+            </div>
+            <div class="manage-list" id="manage-emails"></div>
+          </div>
+
           <!-- VALIDAÇÃO (minerador automático — admin) -->
           <div class="drawer-pane admin-only" id="pane-validacao" hidden>
             <button type="button" class="submit-btn" id="mine-btn">
@@ -1369,6 +1399,15 @@
 
   <div class="toast" id="toast"></div>
 
+  <div class="email-modal" id="email-modal" hidden>
+    <div class="email-modal-box" role="dialog" aria-modal="true" aria-labelledby="email-modal-title">
+      <h3 id="email-modal-title">Enviar boletim por e-mail</h3>
+      <div class="form-note" id="email-modal-info"></div>
+      <div class="email-modal-actions" id="email-modal-actions"></div>
+      <button type="button" class="chip" id="email-modal-close" style="justify-content:center;padding:10px;">Fechar</button>
+    </div>
+  </div>
+
   <div class="share-popover" id="share-popover" hidden>
     <button type="button" class="share-opt" data-action="whatsapp">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"/></svg>
@@ -1483,10 +1522,20 @@
     const { error } = await sb.from('informes').delete().eq('id', id);
     if (error) throw error;
   }
+  // O Supabase Storage rejeita (400 "Invalid key") nomes com acento/ç/emoji,
+  // ex.: "operaçao blackout.jpg". Normaliza para ASCII seguro antes do upload.
+  function nomeArquivoSeguro(nome){
+    const limpo = String(nome || 'arquivo')
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Za-z0-9._-]+/g, '-')
+      .replace(/-+/g, '-').replace(/^[-.]+|-+$/g, '');
+    return limpo || 'arquivo';
+  }
+
   async function uploadInformeImages(files){
     const urls = [];
     for (const file of files){
-      const path = `informes/${crypto.randomUUID()}-${file.name}`;
+      const path = `informes/${crypto.randomUUID()}-${nomeArquivoSeguro(file.name)}`;
       const { error } = await sb.storage.from('informes-imagens').upload(path, file);
       if (error) throw error;
       const { data } = sb.storage.from('informes-imagens').getPublicUrl(path);
@@ -1495,7 +1544,7 @@
     return urls;
   }
   async function uploadInformeSingleImage(file){
-    const path = `informes/meio/${crypto.randomUUID()}-${file.name}`;
+    const path = `informes/meio/${crypto.randomUUID()}-${nomeArquivoSeguro(file.name)}`;
     const { error } = await sb.storage.from('informes-imagens').upload(path, file);
     if (error) throw error;
     const { data } = sb.storage.from('informes-imagens').getPublicUrl(path);
@@ -1540,7 +1589,7 @@
   }
 
   async function uploadSiteImage(file, folder){
-    const path = `${folder}/${crypto.randomUUID()}-${file.name}`;
+    const path = `${folder}/${crypto.randomUUID()}-${nomeArquivoSeguro(file.name)}`;
     const { error } = await sb.storage.from('site-imagens').upload(path, file);
     if (error) throw error;
     const { data } = sb.storage.from('site-imagens').getPublicUrl(path);
@@ -1560,6 +1609,26 @@
   }
   async function deleteClient(id){
     const { error } = await sb.from('clientes').delete().eq('id', id);
+    if (error) throw error;
+  }
+
+  /* ---- E-mails que recebem os boletins (tabela `emails_destinatarios`) ---- */
+  async function getEmails(){
+    const { data, error } = await sb.from('emails_destinatarios').select('*').order('email', { ascending: true });
+    if (error) throw error;
+    return data;
+  }
+  // Insere vários de uma vez; e-mails já cadastrados são ignorados (não dá erro).
+  async function addEmails(emails){
+    if (!emails.length) return 0;
+    const { data, error } = await sb.from('emails_destinatarios')
+      .upsert(emails.map(email => ({ email })), { onConflict: 'email', ignoreDuplicates: true })
+      .select();
+    if (error) throw error;
+    return (data || []).length;
+  }
+  async function deleteEmail(id){
+    const { error } = await sb.from('emails_destinatarios').delete().eq('id', id);
     if (error) throw error;
   }
 
@@ -2244,6 +2313,9 @@
           <button class="share-informe" data-id="${i.id}" title="Compartilhar">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5 15.4 17.5M15.4 6.5 8.6 10.5"/></svg>
           </button>
+          <button class="email-informe" data-id="${i.id}" title="Enviar por e-mail para a lista cadastrada">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          </button>
           <button class="danger delete-informe" title="Excluir">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
           </button>
@@ -2257,6 +2329,7 @@
       if (!pop.hidden && currentShareId === btn.dataset.id){ closeSharePopover(); return; }
       openSharePopover(btn);
     }));
+    document.querySelectorAll('.email-informe').forEach(btn => btn.addEventListener('click', () => abrirEnvioEmail(btn.dataset.id)));
     document.querySelectorAll('.delete-informe').forEach(btn => btn.addEventListener('click', async (e) => {
       const id = e.target.closest('.manage-row').dataset.id;
       await deleteInforme(id);
@@ -2301,6 +2374,179 @@
       renderClientes();
     }));
   }
+
+  async function renderEmails(){
+    const el = document.getElementById('manage-emails');
+    const countEl = document.getElementById('emails-count');
+    if (!session){ el.innerHTML = ''; countEl.textContent = ''; return; }
+    let emails;
+    try {
+      emails = await getEmails();
+    } catch (err) {
+      console.error('Erro ao carregar e-mails', err);
+      el.innerHTML = `<div class="form-note">${escapeHtmlEmail(formatDataError(err, 'Não foi possível carregar os e-mails'))}</div>`;
+      countEl.textContent = '';
+      return;
+    }
+    countEl.textContent = `(${emails.length})`;
+    el.innerHTML = emails.length ? emails.map(m => `
+      <div class="manage-row" data-id="${m.id}">
+        <div class="mi"><div class="t">${escapeHtmlEmail(m.email)}</div></div>
+        <div class="actions">
+          <button class="danger delete-email" title="Remover">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+          </button>
+        </div>
+      </div>`).join('') : `<div class="form-note">Nenhum e-mail cadastrado.</div>`;
+    el.querySelectorAll('.delete-email').forEach(btn => btn.addEventListener('click', async (e) => {
+      const id = e.target.closest('.manage-row').dataset.id;
+      try {
+        await deleteEmail(id);
+        showToast('E-mail removido');
+      } catch (err) {
+        showToast(formatDataError(err, 'Erro ao remover o e-mail'));
+      }
+      renderEmails();
+    }));
+  }
+
+  function escapeHtmlEmail(s){
+    return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  const EMAIL_REGEX = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
+  function extrairEmails(texto){
+    return [...new Set((String(texto).match(EMAIL_REGEX) || []).map(e => e.toLowerCase()))];
+  }
+
+  // SheetJS (leitura de .xlsx/.xls) só é carregado quando alguém importa uma planilha.
+  let sheetJsPromise = null;
+  function carregarSheetJs(){
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (!sheetJsPromise){
+      sheetJsPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = () => resolve(window.XLSX);
+        s.onerror = () => { sheetJsPromise = null; reject(new Error('não foi possível carregar o leitor de planilhas')); };
+        document.head.appendChild(s);
+      });
+    }
+    return sheetJsPromise;
+  }
+  async function lerTextoDaPlanilha(file){
+    if (/\.(xlsx|xls)$/i.test(file.name)){
+      const XLSX = await carregarSheetJs();
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      return wb.SheetNames.map(n => XLSX.utils.sheet_to_csv(wb.Sheets[n])).join('\n');
+    }
+    return await file.text();
+  }
+
+  /* ---- Envio do boletim por e-mail: abre o Outlook/app de e-mail (mailto) ou o
+     Gmail do operador já preenchido — destinatários em Cco (um não vê o outro).
+     Links longos são cortados pelos clientes de e-mail, então listas grandes
+     são divididas em lotes (um e-mail por lote). ---- */
+  const EMAIL_TEXTO_ABERTURA = 'Segue o Boletim Informativo de Segurança para seu conhecimento.';
+  const EMAIL_TEXTO_ASSINATURA = 'Atenciosamente,\nEquipe Movisafe';
+  const LIMITE_URL = { mailto: 1900, gmail: 7500 };
+
+  function montarCorpoEmail(link){
+    return `${EMAIL_TEXTO_ABERTURA}\n\n${link}\n\n${EMAIL_TEXTO_ASSINATURA}`;
+  }
+  function montarUrlEmail(destino, bcc, assunto, corpo){
+    const enc = encodeURIComponent;
+    if (destino === 'gmail'){
+      return `https://mail.google.com/mail/?view=cm&fs=1&bcc=${enc(bcc.join(','))}&su=${enc(assunto)}&body=${enc(corpo)}`;
+    }
+    return `mailto:?bcc=${enc(bcc.join(','))}&subject=${enc(assunto)}&body=${enc(corpo)}`;
+  }
+  function dividirEmLotes(destino, emails, assunto, corpo){
+    const lotes = [];
+    let atual = [];
+    for (const email of emails){
+      const teste = atual.concat(email);
+      if (atual.length && montarUrlEmail(destino, teste, assunto, corpo).length > LIMITE_URL[destino]){
+        lotes.push(atual);
+        atual = [email];
+      } else {
+        atual = teste;
+      }
+    }
+    if (atual.length) lotes.push(atual);
+    return lotes;
+  }
+
+  let envioEmailAtual = null; // { assunto, corpo, emails }
+
+  async function abrirEnvioEmail(id){
+    let emails;
+    try {
+      emails = (await getEmails()).map(m => m.email);
+    } catch (err) {
+      showToast(formatDataError(err, 'Erro ao carregar os e-mails'));
+      return;
+    }
+    if (!emails.length){
+      showToast('Cadastre os e-mails na aba "E-mails" antes de enviar');
+      return;
+    }
+    const titulo = informeTitlesById[id] || 'Boletim Informativo de Segurança';
+    envioEmailAtual = {
+      assunto: `Boletim Informativo de Segurança — ${titulo}`,
+      corpo: montarCorpoEmail(buildShareUrl(id)),
+      emails,
+    };
+    document.getElementById('email-modal-info').textContent =
+      `"${titulo}" será enviado para ${emails.length} destinatário(s) em cópia oculta (Cco). Escolha onde abrir o e-mail:`;
+    document.getElementById('email-modal-actions').innerHTML = `
+      <button type="button" class="submit-btn" data-destino="mailto">Abrir no Outlook / app de e-mail</button>
+      <button type="button" class="submit-btn" data-destino="gmail" style="background:var(--navy);box-shadow:none;">Abrir no Gmail</button>`;
+    document.getElementById('email-modal').hidden = false;
+  }
+
+  function mostrarLotesEmail(destino){
+    const { assunto, corpo, emails } = envioEmailAtual;
+    const lotes = dividirEmLotes(destino, emails, assunto, corpo);
+    if (lotes.length === 1){
+      abrirUrlEmail(montarUrlEmail(destino, lotes[0], assunto, corpo), destino);
+      fecharEnvioEmail();
+      return;
+    }
+    envioEmailAtual.lotes = lotes;
+    envioEmailAtual.destino = destino;
+    document.getElementById('email-modal-info').textContent =
+      `A lista é grande para um único e-mail, então foi dividida em ${lotes.length} lotes. Clique em cada lote e envie o e-mail que abrir:`;
+    document.getElementById('email-modal-actions').innerHTML = lotes.map((l, i) =>
+      `<button type="button" class="submit-btn" data-lote="${i}">Lote ${i + 1} (${l.length} destinatários)</button>`).join('');
+  }
+
+  function abrirUrlEmail(url, destino){
+    if (destino === 'gmail') openInNewTab(url);
+    else window.location.href = url;
+  }
+
+  function fecharEnvioEmail(){
+    document.getElementById('email-modal').hidden = true;
+    envioEmailAtual = null;
+  }
+
+  document.getElementById('email-modal-actions').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn || !envioEmailAtual) return;
+    if (btn.dataset.destino){
+      mostrarLotesEmail(btn.dataset.destino);
+    } else if (btn.dataset.lote !== undefined){
+      const { lotes, destino, assunto, corpo } = envioEmailAtual;
+      abrirUrlEmail(montarUrlEmail(destino, lotes[Number(btn.dataset.lote)], assunto, corpo), destino);
+      btn.disabled = true;
+      btn.textContent += ' — aberto';
+    }
+  });
+  document.getElementById('email-modal-close').addEventListener('click', fecharEnvioEmail);
+  document.getElementById('email-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'email-modal') fecharEnvioEmail();
+  });
 
   async function renderPending(){
     const pending = await getPending();
@@ -2559,7 +2805,7 @@
   }
 
   async function renderAll(){
-    await Promise.all([renderHome(), renderArquivo(), renderManifestacoes(), renderGerenciar(), renderSidebarCategories(), renderClientes(), renderPending(), renderMetrics(), renderTemplateCards()]);
+    await Promise.all([renderHome(), renderArquivo(), renderManifestacoes(), renderGerenciar(), renderSidebarCategories(), renderClientes(), renderEmails(), renderPending(), renderMetrics(), renderTemplateCards()]);
     if (state.view === 'informes' && state.informeTipo) renderInformesFeed(state.informeTipo);
   }
 
@@ -2685,7 +2931,7 @@
     logoutBtn.hidden = !isIn;
     document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !isAdmin; });
     updateOperadorNomeField();
-    if (isIn) { renderGerenciar(); renderClientes(); renderPending(); renderMetrics(); renderManageHero(); renderManageTemplateCovers(); }
+    if (isIn) { renderGerenciar(); renderClientes(); renderEmails(); renderPending(); renderMetrics(); renderManageHero(); renderManageTemplateCovers(); }
   }
   function openDrawer(){
     ['home','manifestacoes','arquivo','informes'].forEach(v => { document.getElementById('view-'+v).hidden = true; });
@@ -2739,7 +2985,7 @@
 
   /* ---- Upload da imagem de capa (Supabase Storage, bucket `materias-capas`) ---- */
   async function uploadCoverImage(file){
-    const path = `capas/${crypto.randomUUID()}-${file.name}`;
+    const path = `capas/${crypto.randomUUID()}-${nomeArquivoSeguro(file.name)}`;
     const { error } = await sb.storage.from('materias-capas').upload(path, file);
     if (error) throw error;
     const { data } = sb.storage.from('materias-capas').getPublicUrl(path);
@@ -4069,7 +4315,8 @@
       resetInformeForm();
       renderAll();
     } catch (err) {
-      showToast('Erro ao salvar o boletim');
+      console.error('Erro ao salvar o boletim', err);
+      showToast(formatDataError(err, 'Erro ao salvar o boletim'));
       submitBtn.disabled = false;
       submitBtn.textContent = originalText;
     }
@@ -4181,6 +4428,41 @@
     e.target.reset();
     showToast('Cliente cadastrado');
     renderClientes();
+  });
+
+  /* ---- E-mails (destinatários dos boletins) ---- */
+  document.getElementById('form-email').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const emails = extrairEmails(document.getElementById('e-email').value);
+    if (!emails.length){ showToast('E-mail inválido'); return; }
+    try {
+      const novos = await addEmails(emails);
+      showToast(novos ? 'E-mail salvo' : 'Este e-mail já estava cadastrado');
+      e.target.reset();
+    } catch (err) {
+      showToast(formatDataError(err, 'Erro ao salvar o e-mail'));
+    }
+    renderEmails();
+  });
+
+  document.getElementById('e-planilha').addEventListener('change', async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const emails = extrairEmails(await lerTextoDaPlanilha(file));
+      if (!emails.length){
+        showToast('Nenhum e-mail encontrado na planilha');
+      } else {
+        const novos = await addEmails(emails);
+        const repetidos = emails.length - novos;
+        showToast(`${novos} e-mail(s) importado(s)` + (repetidos ? ` · ${repetidos} já cadastrado(s)` : ''));
+      }
+    } catch (err) {
+      console.error('Erro ao importar planilha', err);
+      showToast(formatDataError(err, 'Erro ao importar a planilha'));
+    }
+    e.target.value = '';
+    renderEmails();
   });
 
   /* ---- Métricas (admin) ---- */
